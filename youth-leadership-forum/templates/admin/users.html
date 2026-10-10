@@ -1,0 +1,71 @@
+{% extends "admin/base.html" %}
+{% block admin_title %}Users{% endblock %}
+{% block admin_content %}
+<form class="filters" method="get">
+  <label class="sr-only" for="q">Search</label>
+  <input id="q" type="search" name="q" value="{{ q }}" placeholder="Search name, email or organisation">
+  <label class="sr-only" for="status">Status</label>
+  <select id="status" name="status" onchange="this.form.submit()">
+    <option value="">Any status</option>
+    {% for s in ['pending', 'active', 'suspended', 'rejected'] %}<option value="{{ s }}" {{ 'selected' if status == s }}>{{ s|capitalize }}</option>{% endfor %}
+  </select>
+  <label class="sr-only" for="role">Role</label>
+  <select id="role" name="role" onchange="this.form.submit()">
+    <option value="">Any role</option>
+    {% for r in ['member', 'mentor', 'admin'] %}<option value="{{ r }}" {{ 'selected' if role == r }}>{{ r|capitalize }}</option>{% endfor %}
+  </select>
+  <button class="btn btn-navy" type="submit">Search</button>
+</form>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Posts</th><th>Warnings</th><th>Joined</th><th>Actions</th></tr></thead>
+  <tbody>
+  {% for u in rows %}
+  <tr>
+    <td><div class="row">{{ m.avatar(u.name, u.avatar, 'sm') }}<div><a href="{{ url_for('people.profile', user_id=u.id) }}" style="font-weight:700;text-decoration:none">{{ u.name }}</a><div class="small muted">{{ u.email }}</div></div></div></td>
+    <td><span class="pill {{ u.role }}">{{ u.role|capitalize }}</span></td>
+    <td><span class="pill {{ u.status }}">{{ u.status|capitalize }}</span>
+      {% if u.status == 'suspended' %}<div class="small muted">{{ ('Until ' ~ (u.suspended_until|pretty_date)) if u.suspended_until else 'Permanent' }}</div>{% endif %}
+      {% if u.status_reason and u.status in ('suspended', 'rejected') %}<div class="small muted">{{ u.status_reason }}</div>{% endif %}</td>
+    <td>{{ u.post_count }}</td>
+    <td>{{ u.warn_count }}</td>
+    <td class="small muted">{{ u.created_at|pretty_date }}</td>
+    <td>
+      <div class="actions">
+        {% if u.status in ('pending', 'rejected') %}
+          <form method="post" action="{{ url_for('admin.approve', user_id=u.id) }}">{{ m.csrf() }}{{ m.back() }}<button class="btn btn-sm" data-keep>Approve</button></form>
+        {% endif %}
+        {% if u.status == 'suspended' %}
+          <form method="post" action="{{ url_for('admin.reinstate', user_id=u.id) }}">{{ m.csrf() }}{{ m.back() }}<button class="btn btn-sm" data-keep>Reinstate</button></form>
+        {% endif %}
+        {% if u.status == 'active' and u.id != g.user.id and u.role != 'admin' %}
+          <details class="pop"><summary class="btn btn-sm btn-ghost">Warn</summary>
+            <form class="pop-body" method="post" action="{{ url_for('admin.warn', user_id=u.id) }}">{{ m.csrf() }}{{ m.back() }}
+              <div class="field"><label for="w-{{ u.id }}">Message they will see</label><textarea id="w-{{ u.id }}" name="message" maxlength="300" required></textarea></div>
+              <button class="btn btn-sm" data-keep>Send warning</button>
+            </form>
+          </details>
+          <details class="pop"><summary class="btn btn-sm btn-danger-ghost">Suspend</summary>
+            <form class="pop-body" method="post" action="{{ url_for('admin.suspend', user_id=u.id) }}">{{ m.csrf() }}{{ m.back() }}
+              <div class="field"><label for="s-{{ u.id }}">Reason <span class="muted">(shown to them)</span></label><textarea id="s-{{ u.id }}" name="reason" maxlength="300" required></textarea></div>
+              <div class="field"><label for="d-{{ u.id }}">Days <span class="muted">(blank = permanent)</span></label><input id="d-{{ u.id }}" type="number" name="days" min="1" max="3650" placeholder="e.g. 7"></div>
+              <button class="btn btn-sm btn-danger" data-keep>Suspend account</button>
+            </form>
+          </details>
+        {% endif %}
+        {% if u.id != g.user.id and u.status == 'active' %}
+          <form method="post" action="{{ url_for('admin.set_role', user_id=u.id) }}" class="row" style="gap:.3rem">{{ m.csrf() }}{{ m.back() }}
+            <label class="sr-only" for="role-{{ u.id }}">Role</label>
+            <select id="role-{{ u.id }}" name="role" style="width:auto;padding:.3rem .5rem;font-size:.82rem" onchange="if(confirm('Change role for {{ u.name|e }}?')) this.form.submit(); else this.value='{{ u.role }}';">
+              {% for r in ['member', 'mentor', 'admin'] %}<option value="{{ r }}" {{ 'selected' if u.role == r }}>{{ r|capitalize }}</option>{% endfor %}
+            </select>
+          </form>
+        {% endif %}
+      </div>
+    </td>
+  </tr>
+  {% else %}<tr><td colspan="7" class="muted">No users match.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

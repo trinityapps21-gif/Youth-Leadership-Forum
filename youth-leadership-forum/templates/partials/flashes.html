@@ -1,0 +1,12 @@
+{% with msgs = get_flashed_messages(with_categories=true) %}
+{% if msgs or my_warnings %}
+<div class="flashes" role="status">
+  {% for w in my_warnings %}
+  <div class="flash warn"><strong>Notice from the forum admins:</strong> {{ w.message }}
+    <form method="post" action="{{ url_for('people.ack_warning', warning_id=w.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-ghost" data-keep>Got it</button></form>
+  </div>
+  {% endfor %}
+  {% for cat, msg in msgs %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}
+</div>
+{% endif %}
+{% endwith %}

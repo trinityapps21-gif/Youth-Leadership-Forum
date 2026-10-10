@@ -1,0 +1,39 @@
+{% extends "app.html" %}
+{% import "partials/macros.html" as m %}
+{% block title %}{{ p.name }} · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="profile-head">
+    {{ m.avatar(p.name, p.avatar, 'xl') }}
+    <div class="grow">
+      <h1 style="margin-bottom:.2rem">{{ p.name }} {% if p.role != 'member' %}<span class="pill {{ p.role }}" style="vertical-align:middle">{{ p.role|capitalize }}</span>{% endif %}</h1>
+      {% if p.organization %}<div class="muted">{{ p.organization }}</div>{% endif %}
+      {% if p.status != 'active' %}<span class="pill {{ p.status }}">{{ p.status|capitalize }}</span>{% endif %}
+      <div class="stats"><div><b>{{ stats.posts }}</b><span>Posts</span></div><div><b>{{ stats.groups }}</b><span>Groups</span></div></div>
+      <p style="margin:0">{{ p.bio or ('You haven\'t added a bio yet.' if is_me else 'No bio yet.') }}</p>
+    </div>
+  </div>
+  <div class="row wrap" style="margin-top:1rem">
+    {% if is_me %}
+      <a class="btn btn-navy" href="{{ url_for('people.edit_profile') }}">Edit profile</a>
+    {% else %}
+      {% if not blocked_by_me and not blocked_me and p.status == 'active' %}
+      <form method="post" action="{{ url_for('chat.start_direct', user_id=p.id) }}">{{ m.csrf() }}<button class="btn" data-keep>{{ m.icon('chat') }} Message</button></form>
+      {% endif %}
+      <form method="post" action="{{ url_for('people.block', user_id=p.id) }}" {% if not blocked_by_me %}data-confirm="Block {{ p.name }}? You won't see each other's posts or be able to message."{% endif %}>{{ m.csrf() }}<button class="btn btn-ghost" data-keep>{{ 'Unblock' if blocked_by_me else 'Block' }}</button></form>
+      <button type="button" class="btn btn-danger-ghost js-report" data-type="user" data-id="{{ p.id }}">{{ m.icon('flag') }} Report</button>
+      {% if g.user.role == 'admin' %}<a class="btn btn-ghost" href="{{ url_for('admin.users', q=p.email) }}">Manage in admin</a>{% endif %}
+    {% endif %}
+  </div>
+</div>
+<div class="spacer"></div>
+<h2>Posts</h2>
+<div class="stack">
+  {% if blocked_by_me or blocked_me %}
+    <div class="card empty"><p>Posts aren't available because of a block.</p></div>
+  {% else %}
+    {% for post in posts %}{% include "partials/post_card.html" %}
+    {% else %}<div class="card empty"><p>{{ 'You haven\'t posted yet.' if is_me else 'Nothing posted yet.' }}</p></div>{% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

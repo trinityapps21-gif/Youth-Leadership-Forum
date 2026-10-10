@@ -1,0 +1,45 @@
+{% extends "admin/base.html" %}
+{% block admin_title %}Posts{% endblock %}
+{% block admin_content %}
+<nav class="seg" style="max-width:420px;margin-bottom:1rem" aria-label="Post filter">
+  <a href="{{ url_for('admin.posts', view='reported') }}" {% if view == 'reported' %}aria-current="page"{% endif %}>Reported</a>
+  <a href="{{ url_for('admin.posts', view='all') }}" {% if view == 'all' %}aria-current="page"{% endif %}>All live</a>
+  <a href="{{ url_for('admin.posts', view='removed') }}" {% if view == 'removed' %}aria-current="page"{% endif %}>Taken down</a>
+</nav>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Author</th><th>Post</th><th>Posted</th><th>Reports</th><th>Actions</th></tr></thead>
+  <tbody>
+  {% for p in rows %}
+  <tr>
+    <td><a href="{{ url_for('people.profile', user_id=p.user_id) }}" style="font-weight:700;text-decoration:none">{{ p.author_name }}</a>
+      {% if p.author_status != 'active' %}<div><span class="pill {{ p.author_status }}">{{ p.author_status|capitalize }}</span></div>{% endif %}</td>
+    <td>
+      {% if p.content %}<div class="quote">{{ p.content[:400] }}{{ '…' if p.content|length > 400 }}</div>{% endif %}
+      {% if p.image %}<a href="{{ media_url(p.image) }}" target="_blank" rel="noopener"><img class="thumb" src="{{ media_url(p.image) }}" alt="Attached photo"></a>{% endif %}
+      {% if p.is_removed %}<div class="small" style="color:var(--danger)"><b>Taken down:</b> {{ p.removed_reason }}</div>{% endif %}
+      <div class="small muted">{{ p.like_count }} likes · {{ p.comment_count }} comments</div>
+    </td>
+    <td class="small muted">{{ p.created_at|pretty_date }}</td>
+    <td>{% if p.open_reports %}<span class="pill open">{{ p.open_reports }} open</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+    <td>
+      <div class="actions">
+      {% if p.is_removed %}
+        <form method="post" action="{{ url_for('admin.restore_post', post_id=p.id) }}" data-confirm="Restore this post to the feed?">{{ m.csrf() }}{{ m.back() }}<button class="btn btn-sm btn-ghost" data-keep>Restore</button></form>
+      {% else %}
+        <details class="pop"><summary class="btn btn-sm btn-danger">Take down</summary>
+          <form class="pop-body" method="post" action="{{ url_for('admin.remove_post', post_id=p.id) }}">{{ m.csrf() }}{{ m.back() }}
+            <div class="field"><label for="rm-{{ p.id }}">Reason <span class="muted">(kept in the activity log)</span></label><textarea id="rm-{{ p.id }}" name="reason" maxlength="300" required></textarea></div>
+            <label class="check small" style="margin-bottom:.6rem"><input type="checkbox" name="notify" value="1" checked> Tell the author</label>
+            <button class="btn btn-sm btn-danger" data-keep>Take down post</button>
+          </form>
+        </details>
+      {% endif %}
+      </div>
+    </td>
+  </tr>
+  {% else %}<tr><td colspan="5" class="muted">{{ 'No reported posts right now.' if view == 'reported' else 'Nothing here.' }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

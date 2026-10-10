@@ -1,0 +1,43 @@
+{% extends "app.html" %}
+{% import "partials/macros.html" as m %}
+{% block title %}{{ conv.name }} · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="profile-head">
+    {{ m.avatar(conv.name, conv.avatar, 'xl') }}
+    <div class="grow">
+      <h1>{{ conv.name }}</h1>
+      <p class="muted">{{ conv.description or 'No description.' }}</p>
+      <div class="row wrap">
+        <a class="btn" href="{{ url_for('chat.view', conv_id=conv.id, type='group') }}">{{ m.icon('chat') }} Open chat</a>
+        <form method="post" action="{{ url_for('chat.group_leave', conv_id=conv.id) }}" data-confirm="Leave this group?">{{ m.csrf() }}<button class="btn btn-danger-ghost" data-keep>Leave group</button></form>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="spacer"></div>
+<h2>{{ members|length }} members</h2>
+<div class="card" style="padding:.4rem 1.2rem">
+  {% for p in members %}
+  <div class="row" style="padding:.7rem 0;border-bottom:1px solid var(--line)">
+    <a href="{{ url_for('people.profile', user_id=p.id) }}">{{ m.avatar(p.name, p.avatar, 'md') }}</a>
+    <div class="grow"><a href="{{ url_for('people.profile', user_id=p.id) }}" style="text-decoration:none;color:var(--ink);font-weight:700">{{ p.name }}</a>
+      {% if p.member_role == 'owner' %}<span class="pill mentor">Owner</span>{% endif %}</div>
+    {% if is_owner and p.id != g.user.id %}
+    <form method="post" action="{{ url_for('chat.group_remove', conv_id=conv.id, user_id=p.id) }}" data-confirm="Remove {{ p.name }} from the group?">{{ m.csrf() }}<button class="btn btn-sm btn-danger-ghost" data-keep>Remove</button></form>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% if is_owner and addable %}
+<div class="spacer"></div>
+<h2>Add members</h2>
+<form class="card" method="post" action="{{ url_for('chat.group_add', conv_id=conv.id) }}">
+  {{ m.csrf() }}
+  <div class="picker">
+    {% for p in addable %}<label><input type="checkbox" name="members" value="{{ p.id }}"><span>{{ p.name }}{% if p.organization %} <span class="small muted">· {{ p.organization }}</span>{% endif %}</span></label>{% endfor %}
+  </div>
+  <div style="margin-top:.8rem"><button class="btn" type="submit">Add selected</button></div>
+</form>
+{% endif %}
+{% endblock %}

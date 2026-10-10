@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+{% block admin_title %}Approvals{% endblock %}
+{% block admin_content %}
+{% if rows %}
+<div class="stack">
+  {% for u in rows %}
+  <div class="card">
+    <div class="row wrap" style="align-items:flex-start">
+      {{ m.avatar(u.name, '', 'md') }}
+      <div class="grow">
+        <h3 style="margin:0">{{ u.name }}</h3>
+        <div class="small muted">{{ u.email }} · requested {{ u.created_at|timeago }}</div>
+        {% if u.organization %}<div class="small"><b>Organisation:</b> {{ u.organization }}</div>{% endif %}
+        {% if u.signup_note %}<div class="quote">{{ u.signup_note }}</div>{% else %}<div class="small muted">No note added.</div>{% endif %}
+      </div>
+      <div class="actions row">
+        <form method="post" action="{{ url_for('admin.approve', user_id=u.id) }}">{{ m.csrf() }}{{ m.back() }}<button class="btn btn-sm" data-keep>Approve</button></form>
+        <details class="pop"><summary class="btn btn-sm btn-danger-ghost">Reject</summary>
+          <form class="pop-body" method="post" action="{{ url_for('admin.reject', user_id=u.id) }}">{{ m.csrf() }}{{ m.back() }}
+            <div class="field"><label for="rr-{{ u.id }}">Reason <span class="muted">(shown if they try to sign in)</span></label><textarea id="rr-{{ u.id }}" name="reason" maxlength="300"></textarea></div>
+            <button class="btn btn-sm btn-danger" data-keep>Reject request</button>
+          </form>
+        </details>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card empty"><h3>No one is waiting</h3><p>New sign-up requests will appear here.</p></div>
+{% endif %}
+{% endblock %}

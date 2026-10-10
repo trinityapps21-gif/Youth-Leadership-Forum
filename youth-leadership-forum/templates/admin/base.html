@@ -1,0 +1,16 @@
+{% extends "app.html" %}
+{% import "partials/macros.html" as m %}
+{% block title %}{% block admin_title %}Admin{% endblock %} · {{ site_name }}{% endblock %}
+{% block pageclass %}wide{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ self.admin_title() }}</h1></div>
+<nav class="tabs" aria-label="Admin sections">
+  <a href="{{ url_for('admin.dashboard') }}" {% if tab == 'dashboard' %}aria-current="page"{% endif %}>Overview</a>
+  <a href="{{ url_for('admin.approvals') }}" {% if tab == 'approvals' %}aria-current="page"{% endif %}>Approvals {% if pending_count %}<span class="badge alert">{{ pending_count }}</span>{% endif %}</a>
+  <a href="{{ url_for('admin.users') }}" {% if tab == 'users' %}aria-current="page"{% endif %}>Users</a>
+  <a href="{{ url_for('admin.posts') }}" {% if tab == 'posts' %}aria-current="page"{% endif %}>Posts</a>
+  <a href="{{ url_for('admin.reports') }}" {% if tab == 'reports' %}aria-current="page"{% endif %}>Reports {% if open_reports_count %}<span class="badge alert">{{ open_reports_count }}</span>{% endif %}</a>
+  <a href="{{ url_for('admin.audit_log') }}" {% if tab == 'log' %}aria-current="page"{% endif %}>Activity log</a>
+</nav>
+{% block admin_content %}{% endblock %}
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "app.html" %}
+{% import "partials/macros.html" as m %}
+{% block title %}New group · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>New group</h1></div>
+<form class="card" method="post" enctype="multipart/form-data">
+  {{ m.csrf() }}
+  <div class="field"><label for="name">Group name</label><input id="name" type="text" name="name" value="{{ form.get('name', '') }}" maxlength="80" required placeholder="e.g. Community Leaders Circle"></div>
+  <div class="field"><label for="description">What is this group for? <span class="muted">(optional)</span></label><textarea id="description" name="description" maxlength="300" style="min-height:70px">{{ form.get('description', '') }}</textarea></div>
+  <div class="field"><label for="avatar">Group picture <span class="muted">(optional)</span></label><input id="avatar" type="file" name="avatar" accept="image/*"></div>
+  <div class="field">
+    <span class="label">Add members</span>
+    <div class="picker">
+      {% for p in people %}
+      <label><input type="checkbox" name="members" value="{{ p.id }}" {{ 'checked' if p.id in chosen }}>
+        {{ m.avatar(p.name, p.avatar, 'sm') }}
+        <span>{{ p.name }}{% if p.role != 'member' %} <span class="pill {{ p.role }}">{{ p.role|capitalize }}</span>{% endif %}{% if p.organization %}<br><span class="small muted">{{ p.organization }}</span>{% endif %}</span>
+      </label>
+      {% else %}<p class="muted" style="padding:.6rem">No one else has joined yet.</p>{% endfor %}
+    </div>
+    <div class="hint">You can add or remove members later.</div>
+  </div>
+  <div class="row"><button class="btn" type="submit">Create group</button><a class="btn btn-ghost" href="{{ url_for('chat.index') }}">Cancel</a></div>
+</form>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "app.html" %}
+{% import "partials/macros.html" as m %}
+{% set is_group = conv.type == 'group' %}
+{% block title %}{{ conv.name if is_group else other.name }} · {{ site_name }}{% endblock %}
+{% block bodyclass %}chat-page in-thread{% endblock %}
+{% block main %}
+<main class="chat-shell has-active" id="content">
+  {% include "partials/conv_list.html" %}
+  <section class="thread">
+    <div class="thread-head">
+      <a class="icon-btn back" href="{{ url_for('chat.index', type=(kind if kind != 'all' else None)) }}" aria-label="Back to chats">{{ m.icon('back') }}</a>
+      {% if is_group %}
+        <a class="row grow" href="{{ url_for('chat.group_info', conv_id=conv.id) }}">
+          {{ m.avatar(conv.name, conv.avatar, 'md') }}
+          <span><b>{{ conv.name }}</b><span class="muted small">{{ members|length }} members · tap for details</span></span>
+        </a>
+      {% else %}
+        <a class="row grow" href="{{ url_for('people.profile', user_id=other.id) }}">
+          {{ m.avatar(other.name, other.avatar, 'md') }}
+          <span><b>{{ other.name }}</b><span class="muted small">{{ other.role|capitalize }}</span></span>
+        </a>
+      {% endif %}
+    </div>
+    <div class="msgs" id="msgs" aria-live="polite"></div>
+    <div id="send-error" class="notice hidden" role="alert"></div>
+    {% if blocked %}
+      <div class="notice">You can't message this person.</div>
+    {% else %}
+    <form id="send-form" class="composer-bar">
+      <label class="sr-only" for="msg-input">Message</label>
+      <textarea id="msg-input" rows="1" maxlength="2000" placeholder="Type a message" data-autogrow autocomplete="off"></textarea>
+      <button class="btn" type="submit" aria-label="Send" data-keep>{{ m.icon('send') }}</button>
+    </form>
+    {% endif %}
+  </section>
+</main>
+<script type="application/json" id="chat-data">{{ {'id': conv.id, 'group': is_group, 'messages': messages}|tojson }}</script>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/chat.js') }}"></script>{% endblock %}

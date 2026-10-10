@@ -1,0 +1,28 @@
+{% extends "auth_base.html" %}
+{% set art = 'signup-panel.jpg' %}
+{% block title %}Join · {{ site_name }}{% endblock %}
+{% block card %}
+<h1>Create your account</h1>
+<p class="lead">An admin reviews every new account before it goes live. This keeps the forum safe for everyone.</p>
+<form method="post" novalidate>
+  {{ m.csrf() }}
+  <div class="field"><label for="name">Full name</label><input id="name" name="name" type="text" value="{{ form.name }}" autocomplete="name" required maxlength="80"></div>
+  <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" value="{{ form.email }}" autocomplete="email" required></div>
+  <div class="field"><label for="organization">School or organisation <span class="muted">(optional)</span></label><input id="organization" name="organization" type="text" value="{{ form.organization }}" maxlength="120"></div>
+  <div class="field"><label for="signup_note">Why do you want to join? <span class="muted">(optional)</span></label><textarea id="signup_note" name="signup_note" maxlength="500" style="min-height:70px">{{ form.signup_note }}</textarea><div class="hint">This helps the admin approve you faster.</div></div>
+  <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required><div class="hint">At least 8 characters.</div></div>
+  <div class="field"><label for="confirm">Confirm password</label><input id="confirm" name="confirm" type="password" autocomplete="new-password" required></div>
+  <details class="rules">
+    <summary>Community rules</summary>
+    <ul>
+      <li>Be respectful. No bullying, hate or threats.</li>
+      <li>Keep personal details (address, phone, passwords) private.</li>
+      <li>Share only content that is appropriate for young people.</li>
+      <li>Admins can remove posts and suspend accounts that break these rules.</li>
+    </ul>
+  </details>
+  <div class="field"><label class="check"><input type="checkbox" name="agree" value="1" required> <span>I agree to follow the community rules.</span></label></div>
+  <button class="btn btn-block" type="submit">Request to join</button>
+</form>
+<p class="auth-alt">Already approved? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+{% endblock %}

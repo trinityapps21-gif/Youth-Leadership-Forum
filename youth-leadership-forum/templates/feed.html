@@ -1,0 +1,35 @@
+{% extends "app.html" %}
+{% import "partials/macros.html" as m %}
+{% block title %}Feed · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Feed</h1></div>
+
+<form class="card composer" method="post" action="{{ url_for('feed.create_post') }}" enctype="multipart/form-data">
+  {{ m.csrf() }}
+  <div class="row" style="align-items:flex-start">
+    {{ m.avatar(g.user.name, g.user.avatar, 'md') }}
+    <div class="grow">
+      <label class="sr-only" for="content">Share something</label>
+      <textarea id="content" name="content" maxlength="2000" placeholder="Share an idea, a win, or a question with the forum, {{ g.user.name.split()[0] }}"></textarea>
+      <div id="post-preview"></div>
+    </div>
+  </div>
+  <div class="bar">
+    <label class="btn btn-ghost btn-sm" style="cursor:pointer">{{ m.icon('image') }} Add photo<input id="post-image" type="file" name="image" accept="image/*" class="sr-only"></label>
+    <button class="btn" type="submit">Post</button>
+  </div>
+</form>
+
+<div class="spacer"></div>
+<div class="stack">
+  {% for post in posts %}{% include "partials/post_card.html" %}
+  {% else %}
+  <div class="card empty">
+    <img src="{{ url_for('static', filename='img/emblem.png') }}" alt="">
+    <h3>No posts yet</h3>
+    <p>Be the first to share something with the forum.</p>
+  </div>
+  {% endfor %}
+</div>
+{% if has_more %}<p style="text-align:center;margin-top:1.2rem"><a class="btn btn-ghost" href="{{ url_for('feed.index', before=next_before) }}">Older posts</a></p>{% endif %}
+{% endblock %}

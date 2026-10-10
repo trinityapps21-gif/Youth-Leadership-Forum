@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m %}
+{% block body %}
+<div class="auth">
+  <div class="auth-art"><img src="{{ url_for('static', filename='img/' ~ art) }}" alt="Young leaders gathered in a lecture hall"></div>
+  <main class="auth-main" id="content">
+    <div class="auth-card">
+      <img class="logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="Youth Leadership Forum">
+      {% include "partials/flashes.html" %}
+      {% block card %}{% endblock %}
+    </div>
+    {{ m.credit() }}
+  </main>
+</div>
+{% endblock %}

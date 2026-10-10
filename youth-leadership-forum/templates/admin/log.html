@@ -1,0 +1,16 @@
+{% extends "admin/base.html" %}
+{% block admin_title %}Activity log{% endblock %}
+{% block admin_content %}
+<p class="muted">Every approval, take-down, warning and suspension is recorded here, with the admin who did it and why.</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>When</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr></thead>
+  <tbody>
+  {% for a in rows %}
+    <tr><td class="small muted">{{ a.created_at|pretty_date }}</td><td>{{ a.admin_name }}</td><td>{{ a.action|replace('_', ' ')|capitalize }}</td>
+      <td class="small">{{ a.target_type }} #{{ a.target_id }}</td><td class="small">{{ a.reason }}</td></tr>
+  {% else %}<tr><td colspan="5" class="muted">Nothing recorded yet.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

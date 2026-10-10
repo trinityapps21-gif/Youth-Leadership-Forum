@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% import "partials/macros.html" as m %}
+{% block body %}
+<div class="shell">
+  <aside class="sidebar" aria-label="Main">
+    <a class="brand" href="{{ url_for('feed.index') }}">
+      <img src="{{ url_for('static', filename='img/emblem-white.png') }}" alt="">
+      <div><b>Youth<br>Leadership</b><span>Forum</span></div>
+    </a>
+    <nav class="nav">
+      {{ m.nav('feed.', url_for('feed.index'), 'feed', 'Feed') }}
+      {{ m.nav('chat.', url_for('chat.index'), 'chat', 'Chats', unread_total) }}
+      {{ m.nav('people.directory', url_for('people.directory'), 'people', 'People') }}
+      {% if g.user.role == 'admin' %}
+      <div class="nav-sep">Admin</div>
+      {{ m.nav('admin.dashboard', url_for('admin.dashboard'), 'shield', 'Overview') }}
+      {{ m.nav('admin.approvals', url_for('admin.approvals'), 'check', 'Approvals', pending_count, 'alert') }}
+      {{ m.nav('admin.users', url_for('admin.users'), 'users', 'Users') }}
+      {{ m.nav('admin.posts', url_for('admin.posts'), 'image', 'Posts') }}
+      {{ m.nav('admin.reports', url_for('admin.reports'), 'flag', 'Reports', open_reports_count, 'alert') }}
+      {% endif %}
+    </nav>
+    <div class="side-foot">
+      <a class="me-chip" href="{{ url_for('people.profile', user_id=g.user.id) }}">
+        {{ m.avatar(g.user.name, g.user.avatar, 'sm') }}
+        <span><b>{{ g.user.name }}</b><small>{{ g.user.role }}</small></span>
+      </a>
+      <form method="post" action="{{ url_for('auth.logout') }}">{{ m.csrf() }}<button class="btn btn-ghost btn-sm" data-keep>{{ m.icon('logout') }} Sign out</button></form>
+      {{ m.credit() }}
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <img src="{{ url_for('static', filename='img/emblem-white.png') }}" alt="">
+      <b>Youth Leadership Forum</b>
+      <form method="post" action="{{ url_for('auth.logout') }}">{{ m.csrf() }}<button class="icon-btn" style="color:#fff" aria-label="Sign out" data-keep>{{ m.icon('logout') }}</button></form>
+    </header>
+
+    {% block main %}
+    <main class="page {% block pageclass %}{% endblock %}" id="content">
+      {% include "partials/flashes.html" %}
+      {% block content %}{% endblock %}
+    </main>
+    {% endblock %}
+
+    <footer class="footer">{{ m.credit() }}</footer>
+  </div>
+
+  <nav class="tabbar" aria-label="Main">
+    {{ m.nav('feed.', url_for('feed.index'), 'feed', 'Feed') }}
+    {{ m.nav('chat.', url_for('chat.index'), 'chat', 'Chats', unread_total) }}
+    {{ m.nav('people.directory', url_for('people.directory'), 'people', 'People') }}
+    {% if g.user.role == 'admin' %}{{ m.nav('admin.', url_for('admin.dashboard'), 'shield', 'Admin', pending_count + open_reports_count, 'alert') }}{% endif %}
+    {{ m.nav('people.profile', url_for('people.profile', user_id=g.user.id), 'user', 'Me') }}
+  </nav>
+</div>
+
+<dialog id="report-dialog" aria-labelledby="r-title">
+  <form method="dialog">
+    <h2 id="r-title" class="r-title">Report</h2>
+    <p class="muted small">Tell us what's wrong. Admins review every report, and the person won't know who reported them.</p>
+    <div class="opts">
+      {% for r in report_reasons %}<label><input type="radio" name="reason" value="{{ r }}"> {{ r }}</label>{% endfor %}
+    </div>
+    <div class="field"><label for="r-detail" class="sr-only">More detail</label><textarea id="r-detail" maxlength="300" placeholder="Anything else the admins should know (optional)"></textarea></div>
+    <p class="r-msg small" role="status" style="color:var(--green);font-weight:600;min-height:1.2em"></p>
+    <div class="row" style="justify-content:flex-end"><button type="button" class="btn btn-ghost r-cancel">Cancel</button><button class="btn r-send">Send report</button></div>
+  </form>
+</dialog>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "app.html" %}
+{% import "partials/macros.html" as m %}
+{% block title %}Chats · {{ site_name }}{% endblock %}
+{% block bodyclass %}chat-page{% endblock %}
+{% block main %}
+<main class="chat-shell" id="content">
+  {% include "partials/conv_list.html" %}
+  <section class="thread">
+    <div class="thread-empty">
+      <div>
+        <img src="{{ url_for('static', filename='img/emblem.png') }}" alt="">
+        <h2>Your messages</h2>
+        <p>Choose a conversation, or message someone from People.</p>
+        <a class="btn" href="{{ url_for('people.directory') }}">Find people</a>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}

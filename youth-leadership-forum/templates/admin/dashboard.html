@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+{% block admin_title %}Admin overview{% endblock %}
+{% block admin_content %}
+<div class="stat-grid">
+  <a class="stat {{ 'hot' if stats.pending }}" href="{{ url_for('admin.approvals') }}"><b>{{ stats.pending }}</b><span>Waiting for approval</span></a>
+  <a class="stat {{ 'hot' if stats.reports }}" href="{{ url_for('admin.reports') }}"><b>{{ stats.reports }}</b><span>Open reports</span></a>
+  <a class="stat" href="{{ url_for('admin.users', status='active') }}"><b>{{ stats.active }}</b><span>Active members</span></a>
+  <a class="stat" href="{{ url_for('admin.users', status='suspended') }}"><b>{{ stats.suspended }}</b><span>Suspended accounts</span></a>
+  <a class="stat" href="{{ url_for('admin.posts', view='all') }}"><b>{{ stats.posts }}</b><span>Live posts</span></a>
+  <a class="stat" href="{{ url_for('admin.posts', view='removed') }}"><b>{{ stats.removed }}</b><span>Posts taken down</span></a>
+  <div class="stat"><b>{{ stats.groups }}</b><span>Groups</span></div>
+</div>
+<h2>Recent admin activity</h2>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>When</th><th>Admin</th><th>Action</th><th>Details</th></tr></thead>
+    <tbody>
+    {% for a in recent %}
+      <tr><td class="small muted">{{ a.created_at|timeago }}</td><td>{{ a.admin_name }}</td><td>{{ a.action|replace('_', ' ')|capitalize }}</td><td class="small">{{ a.reason }}</td></tr>
+    {% else %}<tr><td colspan="4" class="muted">No admin activity yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

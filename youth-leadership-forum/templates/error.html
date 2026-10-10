@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · {{ site_name }}{% endblock %}
+{% block body %}
+<main class="error-page">
+  <div>
+    <img src="{{ url_for('static', filename='img/emblem.png') }}" alt="">
+    <div class="code">{{ code }}</div>
+    <h1>{{ title }}</h1>
+    <p class="muted">{{ text }}</p>
+    <p><a class="btn" href="{{ url_for('home') }}">Go to the forum</a></p>
+    <div class="credit" style="margin-top:2rem">Built and powered by <b>Emtrixz Technology Company</b></div>
+  </div>
+</main>
+{% endblock %}

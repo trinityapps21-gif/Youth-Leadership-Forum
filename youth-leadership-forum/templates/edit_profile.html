@@ -1,0 +1,20 @@
+{% extends "app.html" %}
+{% import "partials/macros.html" as m %}
+{% block title %}Edit profile · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Edit profile</h1></div>
+<form class="card" method="post" enctype="multipart/form-data">
+  {{ m.csrf() }}
+  <div class="row" style="margin-bottom:1.2rem">
+    {{ m.avatar(g.user.name, g.user.avatar, 'xl') }}
+    <div>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer">Choose photo<input type="file" name="avatar" accept="image/*" class="sr-only"></label>
+      {% if g.user.avatar %}<label class="check small" style="margin-top:.5rem"><input type="checkbox" name="remove_avatar" value="1"> Remove current photo</label>{% endif %}
+    </div>
+  </div>
+  <div class="field"><label for="name">Full name</label><input id="name" type="text" name="name" value="{{ g.user.name }}" maxlength="80" required></div>
+  <div class="field"><label for="organization">School or organisation</label><input id="organization" type="text" name="organization" value="{{ g.user.organization }}" maxlength="120"></div>
+  <div class="field"><label for="bio">Bio</label><textarea id="bio" name="bio" maxlength="300" style="min-height:90px">{{ g.user.bio }}</textarea><div class="hint">Up to 300 characters.</div></div>
+  <div class="row"><button class="btn" type="submit">Save changes</button><a class="btn btn-ghost" href="{{ url_for('people.profile', user_id=g.user.id) }}">Cancel</a></div>
+</form>
+{% endblock %}

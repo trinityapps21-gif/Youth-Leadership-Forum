@@ -1,0 +1,27 @@
+{% import "partials/macros.html" as m %}
+<section class="chat-list" aria-label="Conversations">
+  <header>
+    <div class="row"><h1 class="grow">Chats</h1><a class="btn btn-sm" href="{{ url_for('chat.new_group') }}">{{ m.icon('plus') }} New group</a></div>
+    <nav class="seg" aria-label="Filter conversations">
+      <a href="{{ url_for('chat.index') }}" {% if kind == 'all' %}aria-current="page"{% endif %}>All</a>
+      <a href="{{ url_for('chat.index', type='direct') }}" {% if kind == 'direct' %}aria-current="page"{% endif %}>Direct</a>
+      <a href="{{ url_for('chat.index', type='group') }}" {% if kind == 'group' %}aria-current="page"{% endif %}>Groups</a>
+    </nav>
+  </header>
+  <div style="padding:0 1rem">{% include "partials/flashes.html" %}</div>
+  <div class="conv-items">
+    {% for c in convs %}
+    <a class="conv" href="{{ url_for('chat.view', conv_id=c.id, type=(kind if kind != 'all' else None)) }}" {% if c.id == active %}aria-current="page"{% endif %}>
+      {{ m.avatar(c.title, c.pic, 'md') }}
+      <div class="grow"><b>{{ c.title }}{% if c.type == 'group' %} <span class="pill">Group</span>{% endif %}</b><div class="last">{{ c.last_msg or 'No messages yet' }}</div></div>
+      <div class="conv-meta"><span class="when">{{ c.sort|timeago }}</span>{% if c.unread %}<span class="badge">{{ c.unread }}</span>{% endif %}</div>
+    </a>
+    {% else %}
+    <div class="empty">
+      <h3>No conversations yet</h3>
+      <p>Find someone in <a href="{{ url_for('people.directory') }}">People</a> to message, or start a group.</p>
+    </div>
+    {% endfor %}
+  </div>
+  {{ m.credit('small') }}
+</section>

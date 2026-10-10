@@ -1,0 +1,57 @@
+{% extends "admin/base.html" %}
+{% block admin_title %}Reports{% endblock %}
+{% block admin_content %}
+<nav class="seg" style="max-width:320px;margin-bottom:1rem" aria-label="Report filter">
+  <a href="{{ url_for('admin.reports', view='open') }}" {% if view == 'open' %}aria-current="page"{% endif %}>Open</a>
+  <a href="{{ url_for('admin.reports', view='closed') }}" {% if view != 'open' %}aria-current="page"{% endif %}>Resolved</a>
+</nav>
+{% if rows %}
+<div class="stack">
+  {% for r in rows %}
+  <div class="card">
+    <div class="row wrap" style="align-items:flex-start">
+      <div class="grow">
+        <div class="row wrap"><span class="pill {{ 'open' if r.status == 'open' else 'active' }}">{{ r.status|capitalize }}</span><b>{{ 'Post' if r.target_type == 'post' else 'Person' }} reported</b><span class="small muted">by {{ r.reporter_name }} · {{ r.created_at|timeago }}</span></div>
+        <div style="margin:.3rem 0"><b>Reason:</b> {{ r.reason }}</div>
+        {% if r.target_type == 'post' %}
+          {% if r.post %}
+            <div class="small muted">Written by <a href="{{ url_for('people.profile', user_id=r.post.user_id) }}">{{ r.post.author }}</a>{% if r.post.is_removed %} · <b style="color:var(--danger)">already taken down</b>{% endif %}</div>
+            {% if r.post.content %}<div class="quote">{{ r.post.content[:400] }}</div>{% endif %}
+            {% if r.post.image %}<img class="thumb" src="{{ media_url(r.post.image) }}" alt="Attached photo">{% endif %}
+          {% else %}<div class="small muted">This post no longer exists.</div>{% endif %}
+        {% else %}
+          {% if r.user %}<div class="small"><a href="{{ url_for('people.profile', user_id=r.user.id) }}">{{ r.user.name }}</a> · <span class="pill {{ r.user.status }}">{{ r.user.status|capitalize }}</span></div>
+          {% else %}<div class="small muted">This account no longer exists.</div>{% endif %}
+        {% endif %}
+        {% if r.status != 'open' and r.resolution %}<div class="small muted" style="margin-top:.3rem">Outcome: {{ r.resolution }}</div>{% endif %}
+      </div>
+      {% if r.status == 'open' %}
+      <div class="actions row">
+        {% if r.target_type == 'post' and r.post and not r.post.is_removed %}
+        <details class="pop"><summary class="btn btn-sm btn-danger">Take down post</summary>
+          <form class="pop-body" method="post" action="{{ url_for('admin.remove_post', post_id=r.target_id) }}">{{ m.csrf() }}{{ m.back() }}
+            <div class="field"><label for="rp-{{ r.id }}">Reason</label><textarea id="rp-{{ r.id }}" name="reason" maxlength="300" required></textarea></div>
+            <label class="check small" style="margin-bottom:.6rem"><input type="checkbox" name="notify" value="1" checked> Tell the author</label>
+            <button class="btn btn-sm btn-danger" data-keep>Take down post</button>
+          </form>
+        </details>
+        {% endif %}
+        {% if r.target_type == 'user' and r.user %}<a class="btn btn-sm btn-navy" href="{{ url_for('admin.users', q=r.user.name) }}">Manage user</a>{% endif %}
+        {% if r.target_type == 'post' and r.post %}<a class="btn btn-sm btn-ghost" href="{{ url_for('admin.users', q=r.post.author) }}">Manage author</a>{% endif %}
+        <details class="pop"><summary class="btn btn-sm btn-ghost">Dismiss</summary>
+          <form class="pop-body" method="post" action="{{ url_for('admin.dismiss_report', report_id=r.id) }}">{{ m.csrf() }}{{ m.back() }}
+            <div class="field"><label for="dn-{{ r.id }}">Note <span class="muted">(optional)</span></label><textarea id="dn-{{ r.id }}" name="note" maxlength="300" placeholder="Why no action is needed"></textarea></div>
+            <button class="btn btn-sm" data-keep>Dismiss report</button>
+          </form>
+        </details>
+        <form method="post" action="{{ url_for('admin.resolve_report', report_id=r.id) }}">{{ m.csrf() }}{{ m.back() }}<button class="btn btn-sm btn-ghost" data-keep>Mark handled</button></form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card empty"><h3>{{ 'No open reports' if view == 'open' else 'Nothing resolved yet' }}</h3><p>{{ 'When members report a post or person, it shows up here.' if view == 'open' else 'Resolved reports will be listed here.' }}</p></div>
+{% endif %}
+{% endblock %}
