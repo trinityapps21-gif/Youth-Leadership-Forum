@@ -1,71 +1,32 @@
-# ======================================================================
-#  HOW YOUR .env FILE SHOULD LOOK  (every value below is a FAKE sample)
-# ======================================================================
-#  1. Copy the file .env.example in the project folder to a new file named
-#     exactly:   .env      (a dot, then env, no .txt on the end)
-#  2. Replace each sample value below with your own real value.
-#  3. Rules:
-#       - No spaces around the = sign
-#       - No quotation marks around values
-#       - Lines starting with # are notes and are ignored
-#       - Never share this file or upload it to GitHub
-# ======================================================================
+
+TURSO_DATABASE_URL=libsql://youth-leardership-forum-trinityapps21-gif.aws-ap-southeast-2.turso.io
 
 
-# ---------- 1. TURSO DATABASE ----------
-# Get the URL:    turso db show --url youth-forum
-# It always starts with libsql://
-TURSO_DATABASE_URL=libsql://youth-forum-yourname.aws-eu-west-1.turso.io
-
-# Get the token:  turso db tokens create youth-forum
-# It is one very long line that starts with eyJ
-TURSO_AUTH_TOKEN=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3MDAwMDAwMDB9.SAMPLE-TOKEN-REPLACE-WITH-YOURS
+TURSO_AUTH_TOKEN=eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3OTE2NDI2MzEsImlkIjoiMDFhMTI2MzItN2YwMS03YmI2LWExMTctZDY2MTliZjc0NGM4Iiwia2lkIjoiZWRma2Y1a0RCdklkUk9NZkFtX2JBYkNIYjE1bTFQOEJqRzB4SGhxMW84YyIsInJpZCI6IjJkMWQ1NzAyLWU0ZTYtNGRlNC04YjZhLTZhMDRkNTkxOTQ5ZCJ9.ddlXBzQ95B-O9bq5GYCjy5tRglTo_TAV7eFSGSoUc1pOW6NGd2qqpy9ZKVvwy6UQ7605VSgCvUgeJO4cC6IvBQ
 
 
-# ---------- 2. APP SECURITY ----------
-# Make one by running:
-#   python -c "import secrets; print(secrets.token_hex(32))"
-# Paste the 64-character result here. Keep it the same once people have signed in.
+
 SECRET_KEY=9f2c7a41d8e05b36c1a94f7e20d3b8a65c0e1f4972ab3d86e5f10c2b7a9d4e38
 
-# Leave as 0 on your own computer. Change to 1 once the live site uses https://
+
 SESSION_COOKIE_SECURE=0
 
 
-# ---------- 3. FIRST ADMIN ACCOUNT ----------
-# Created automatically the first time the app starts.
-# You sign in with this email and password.
+
 ADMIN_NAME=Forum Admin
-ADMIN_EMAIL=admin@yourforum.org
-ADMIN_PASSWORD=Use-A-Long-Strong-Password-9!
+ADMIN_EMAIL=admin@youthleadershipforum.org
+ADMIN_PASSWORD=admin123
 
 
 # ---------- 4. CLOUDINARY MEDIA BUCKET ----------
-# Option A (easiest): one line from Cloudinary > Settings > API Keys.
-# Format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
-CLOUDINARY_URL=cloudinary://123456789012345:AbCdEfGhIjKlMnOpQrStUvWxYz1@your-cloud-name
-
-# Option B: use these three INSTEAD of Option A (leave A empty if you use B).
-# CLOUDINARY_CLOUD_NAME=your-cloud-name
-# CLOUDINARY_API_KEY=123456789012345
-# CLOUDINARY_API_SECRET=AbCdEfGhIjKlMnOpQrStUvWxYz1
-
-# Folder inside Cloudinary where this app keeps its photos.
-# Leave as is, so these photos stay separate from your other projects.
-CLOUDINARY_FOLDER=youth_leadership_forum
 
 
-# ---------- 5. OPTIONAL ----------
-# Time zone for dates and times shown on the site.
-# Kampala, Nairobi, Dar es Salaam: Africa/Nairobi  (or Africa/Kampala)
-TIMEZONE=Africa/Kampala
 
-# Only used when Cloudinary is NOT set up (testing on your computer).
-# You can delete this line once Cloudinary works.
-UPLOAD_DIR=static/uploads
+# CLOUDINARY_CLOUD_NAME=xl9wakf6
+# CLOUDINARY_API_KEY=535154923796493
+# CLOUDINARY_API_SECRET=7bq-BoKPpiGytDvuBjkiV8l7Wk4
 
 
-# ======================================================================
-#  CHECK IT WORKED:   python check_db.py
-#  You want to see:   Connection: ok   and   Upload test: ok
-# ======================================================================
+
+
+
