@@ -28,6 +28,11 @@ def _env_ready():
     return all(os.getenv(k) for k in ("CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"))
 
 
+def configured_in_env():
+    """True when Cloudinary keys are present (without importing the SDK)."""
+    return _env_ready()
+
+
 def enabled():
     """True when media should go to Cloudinary."""
     global _configured
