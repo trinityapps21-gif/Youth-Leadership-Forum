@@ -1,3 +1,4 @@
+import hashlib
 import io
 import os
 import re
@@ -152,6 +153,13 @@ def lift_expired_suspension(user):
     return user
 
 
+def pw_fingerprint(user):
+    """Short fingerprint of the stored password. Kept in the session so that
+    changing a password signs that account out everywhere else."""
+    raw = (current_app.config["SECRET_KEY"] + user["password_hash"]).encode()
+    return hashlib.sha256(raw).hexdigest()[:16]
+
+
 def load_user():
     """Run before every request: load the signed-in user and enforce account status."""
     g.user = None
@@ -163,6 +171,12 @@ def load_user():
     user = db.one("SELECT * FROM users WHERE id = ?", (uid,))
     if not user:
         session.pop("user_id", None)
+        return
+    if session.get("pw") != pw_fingerprint(user):
+        had_session = "pw" in session
+        session.clear()
+        if had_session:
+            flash("Your password was changed. Sign in again with the new one.", "error")
         return
     lift_expired_suspension(user)
     if user["status"] != "active":
