@@ -1,0 +1,33 @@
+# Render Blueprint: lets you create the whole service in one click.
+# Render dashboard > New > Blueprint > pick your GitHub repo.
+services:
+  - type: web
+    name: youth-leadership-forum
+    runtime: python
+    plan: free            # change to "starter" for an always-on site
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --threads 4 --timeout 60
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: SECRET_KEY
+        generateValue: true          # Render makes a strong random value for you
+      - key: TIMEZONE
+        value: Africa/Kampala
+      - key: CLOUDINARY_FOLDER
+        value: youth_leadership_forum
+      # Fill these in on the Render dashboard (marked sync:false so they are never stored in Git):
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: ADMIN_NAME
+        value: Forum Admin
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
