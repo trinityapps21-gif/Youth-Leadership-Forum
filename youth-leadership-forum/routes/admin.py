@@ -279,6 +279,60 @@ def resolve_report(report_id):
     return _back("admin.reports")
 
 
+# ---------- password resets ----------
+@bp.route("/password-resets")
+@admin_required
+def password_resets():
+    view = request.args.get("view", "open")
+    where = "r.status = 'open'" if view == "open" else "r.status != 'open'"
+    rows = db.query(
+        f"""SELECT r.id, r.note, r.status, r.reason, r.created_at, r.resolved_at, r.user_id,
+                   u.name, u.email, u.role, u.organization, u.avatar, u.created_at AS joined, u.last_seen,
+                   a.name AS resolved_by_name
+            FROM password_resets r JOIN users u ON u.id = r.user_id
+            LEFT JOIN users a ON a.id = r.resolved_by
+            WHERE {where} ORDER BY r.id DESC LIMIT 200""")
+    return render_template("admin/resets.html", rows=rows, view=view if view == "closed" else "open", tab="resets")
+
+
+@bp.route("/password-resets/<int:reset_id>/approve", methods=["POST"])
+@admin_required
+def approve_reset(reset_id):
+    r = db.one("SELECT * FROM password_resets WHERE id = ?", (reset_id,))
+    if not r:
+        abort(404)
+    if r["status"] != "open":
+        flash("That request was already handled or replaced by a newer one.", "error")
+        return _back("admin.password_resets")
+    if r["user_id"] == g.user["id"]:
+        flash("Another admin needs to approve your own password reset.", "error")
+        return _back("admin.password_resets")
+    u = _user_or_404(r["user_id"])
+    db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (r["new_hash"], u["id"]))
+    db.execute("UPDATE password_resets SET status='approved', resolved_by=?, resolved_at=? WHERE id=?",
+               (g.user["id"], helpers.now_str(), reset_id))
+    log_admin("approve_password_reset", "user", u["id"], u["email"])
+    flash(f"Approved. {u['name']} can now sign in with the new password they chose.", "ok")
+    return _back("admin.password_resets")
+
+
+@bp.route("/password-resets/<int:reset_id>/reject", methods=["POST"])
+@admin_required
+def reject_reset(reset_id):
+    r = db.one("SELECT * FROM password_resets WHERE id = ?", (reset_id,))
+    if not r:
+        abort(404)
+    if r["status"] != "open":
+        flash("That request was already handled or replaced by a newer one.", "error")
+        return _back("admin.password_resets")
+    reason = request.form.get("reason", "").strip()[:300]
+    db.execute("UPDATE password_resets SET status='rejected', reason=?, resolved_by=?, resolved_at=? WHERE id=?",
+               (reason, g.user["id"], helpers.now_str(), reset_id))
+    log_admin("reject_password_reset", "user", r["user_id"], reason)
+    flash("Request rejected. Their old password still works.", "ok")
+    return _back("admin.password_resets")
+
+
 # ---------- audit log ----------
 @bp.route("/log")
 @admin_required
