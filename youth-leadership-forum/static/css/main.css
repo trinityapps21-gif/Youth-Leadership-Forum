@@ -330,3 +330,8 @@ dialog .opts input { accent-color: var(--green); width: 18px; height: 18px; }
   .auth-card { margin: 0 auto; padding-top: .4rem; }
   .auth-main > .credit { margin-top: auto; padding-top: 1.4rem; }
 }
+
+/* ---------- small helpers for the password reset pages ---------- */
+.plain { margin: 0 0 1.4rem; padding-left: 1.2rem; color: var(--muted); }
+.plain li { margin: .4rem 0; }
+.field .hint a { font-weight: 600; color: var(--green); }
