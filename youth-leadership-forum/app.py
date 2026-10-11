@@ -102,6 +102,11 @@ def create_app():
     def home():
         return redirect(url_for("feed.index") if g.user else url_for("auth.login"))
 
+    @app.route("/favicon.ico")
+    def favicon():
+        # Browsers ask for /favicon.ico by default; send them to the real icon.
+        return redirect(url_for("static", filename="img/favicon-64.png"), code=301)
+
     @app.route("/healthz")
     def healthz():
         return {"ok": True}
