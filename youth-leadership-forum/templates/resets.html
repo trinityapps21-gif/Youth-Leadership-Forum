@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+{% block admin_title %}Password resets{% endblock %}
+{% block admin_content %}
+<nav class="tabs" aria-label="Filter">
+  <a href="{{ url_for('admin.password_resets') }}" {% if view == 'open' %}aria-current="page"{% endif %}>Waiting</a>
+  <a href="{{ url_for('admin.password_resets', view='closed') }}" {% if view == 'closed' %}aria-current="page"{% endif %}>Handled</a>
+</nav>
+{% if view == 'open' %}
+<div class="card" style="margin-bottom:1rem"><b>Check it's really them before you approve.</b>
+  <span class="muted">Approving lets whoever sent the request sign in as this person. Confirm in person or through someone you trust, not only from the note below.</span></div>
+{% endif %}
+{% if rows %}
+<div class="stack">
+  {% for r in rows %}
+  <div class="card">
+    <div class="row wrap" style="align-items:flex-start">
+      {{ m.avatar(r.name, r.avatar, 'md') }}
+      <div class="grow">
+        <h3 style="margin:0">{{ r.name }} <span class="badge">{{ r.role|capitalize }}</span></h3>
+        <div class="small muted">{{ r.email }} · requested {{ r.created_at|timeago }}</div>
+        <div class="small muted">Joined {{ r.joined|timeago }}{% if r.last_seen %} · last seen {{ r.last_seen|timeago }}{% endif %}{% if r.organization %} · {{ r.organization }}{% endif %}</div>
+        <div class="small" style="margin-top:.4rem"><b>How they said you can confirm it's them:</b></div>
+        <div class="quote">{{ r.note }}</div>
+        {% if view == 'closed' %}
+        <div class="small muted">
+          {% if r.status == 'approved' %}Approved{% elif r.status == 'rejected' %}Rejected{% else %}Replaced by a newer request{% endif %}
+          {% if r.resolved_by_name %} by {{ r.resolved_by_name }}{% endif %} {{ r.resolved_at|timeago }}{% if r.reason %} · Reason: {{ r.reason }}{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% if view == 'open' %}
+      <div class="actions row">
+        {% if r.user_id == g.user.id %}
+          <span class="small muted">Another admin must review your own request.</span>
+        {% else %}
+        <form method="post" action="{{ url_for('admin.approve_reset', reset_id=r.id) }}">{{ m.csrf() }}{{ m.back() }}<button class="btn btn-sm" data-keep>Approve reset</button></form>
+        <details class="pop"><summary class="btn btn-sm btn-danger-ghost">Reject</summary>
+          <form class="pop-body" method="post" action="{{ url_for('admin.reject_reset', reset_id=r.id) }}">{{ m.csrf() }}{{ m.back() }}
+            <div class="field"><label for="rj-{{ r.id }}">Reason <span class="muted">(shown if they try to sign in)</span></label><textarea id="rj-{{ r.id }}" name="reason" maxlength="300"></textarea></div>
+            <button class="btn btn-sm btn-danger" data-keep>Reject request</button>
+          </form>
+        </details>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card empty"><h3>{% if view == 'open' %}No requests waiting{% else %}Nothing handled yet{% endif %}</h3><p>Password reset requests will appear here.</p></div>
+{% endif %}
+{% endblock %}

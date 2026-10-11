@@ -1,0 +1,16 @@
+{% extends "auth_base.html" %}
+{% set art = 'login-panel.jpg' %}
+{% block title %}Reset your password · {{ site_name }}{% endblock %}
+{% block card %}
+<h1>Reset your password</h1>
+<p class="lead">Choose a new password and send it to the admins for approval. Once an admin approves it, sign in with the new password.</p>
+<form method="post" novalidate>
+  {{ m.csrf() }}
+  <div class="field"><label for="email">Email you signed up with</label><input id="email" name="email" type="email" value="{{ form.email }}" autocomplete="email" required autofocus></div>
+  <div class="field"><label for="password">New password</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required><div class="hint">At least 8 characters.</div></div>
+  <div class="field"><label for="confirm">Confirm new password</label><input id="confirm" name="confirm" type="password" autocomplete="new-password" required></div>
+  <div class="field"><label for="note">How can the admin confirm it's you?</label><textarea id="note" name="note" maxlength="300" style="min-height:70px" required>{{ form.note }}</textarea><div class="hint">For example your school or class, or a leader who knows you.</div></div>
+  <button class="btn btn-block" type="submit">Send for approval</button>
+</form>
+<p class="auth-alt"><a href="{{ url_for('auth.login') }}">Back to sign in</a></p>
+{% endblock %}

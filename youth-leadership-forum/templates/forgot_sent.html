@@ -1,0 +1,13 @@
+{% extends "auth_base.html" %}
+{% set art = 'login-panel.jpg' %}
+{% block title %}Request sent · {{ site_name }}{% endblock %}
+{% block card %}
+<h1>Request sent</h1>
+<p class="lead">If that email belongs to an active account, the admins can now see your request.</p>
+<ul class="plain">
+  <li>Your old password keeps working until an admin approves the change.</li>
+  <li>After approval, sign in with the new password you just chose.</li>
+  <li>If nothing changes after a day or two, ask the forum admin directly.</li>
+</ul>
+<a class="btn btn-block" href="{{ url_for('auth.login') }}">Back to sign in</a>
+{% endblock %}
