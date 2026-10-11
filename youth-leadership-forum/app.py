@@ -13,8 +13,23 @@ def create_app():
     app.config.from_object(Config)
     os.makedirs(app.config["UPLOAD_DIR"], exist_ok=True)
 
-    if app.config["SECRET_KEY"] == "dev-only-change-me" and os.getenv("FLASK_ENV") == "production":
-        raise RuntimeError("Set SECRET_KEY in your environment before running in production.")
+    on_render = os.getenv("RENDER") == "true" or os.getenv("FLASK_ENV") == "production"
+    if on_render:
+        # Render's disk is wiped on every deploy and restart, so refuse to start
+        # in a state that would silently lose data.
+        problems = []
+        if app.config["SECRET_KEY"] == "dev-only-change-me":
+            problems.append("SECRET_KEY is not set")
+        if not app.config["TURSO_DATABASE_URL"]:
+            problems.append("TURSO_DATABASE_URL is not set (the local database file would be erased on every deploy)")
+        if not storage.configured_in_env():
+            problems.append("Cloudinary is not set (uploaded photos would be erased on every deploy)")
+        if problems:
+            raise RuntimeError("Not ready for hosting: " + "; ".join(problems) + ". Add them under Environment in Render.")
+        # Render sits behind a proxy: trust it for the real client IP and https.
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+        app.config["SESSION_COOKIE_SECURE"] = True
 
     app.teardown_appcontext(db.close_db)
     db.init_db(app)
@@ -33,7 +48,7 @@ def create_app():
         ctx = dict(
             site_name=app.config["SITE_NAME"], built_by=app.config["BUILT_BY"],
             report_reasons=helpers.REPORT_REASONS,
-            unread_total=0, pending_count=0, open_reports_count=0, my_warnings=[],
+            unread_total=0, pending_count=0, open_reports_count=0, open_resets_count=0, my_warnings=[],
         )
         user = g.get("user")
         if user:
@@ -48,6 +63,7 @@ def create_app():
             if user["role"] == "admin":
                 ctx["pending_count"] = db.one("SELECT COUNT(*) AS n FROM users WHERE status='pending'")["n"]
                 ctx["open_reports_count"] = db.one("SELECT COUNT(*) AS n FROM reports WHERE status='open'")["n"]
+                ctx["open_resets_count"] = db.one("SELECT COUNT(*) AS n FROM password_resets WHERE status='open'")["n"]
         return ctx
 
     @app.before_request
@@ -63,6 +79,8 @@ def create_app():
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("X-Frame-Options", "DENY")
         resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        if app.config["SESSION_COOKIE_SECURE"]:
+            resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
         if request.endpoint not in ("static", "uploads"):
             resp.headers["Cache-Control"] = "no-store"
         return resp
