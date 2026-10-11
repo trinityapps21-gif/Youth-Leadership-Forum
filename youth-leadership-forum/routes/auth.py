@@ -26,6 +26,9 @@ def login():
         if not user or not check_password_hash(user["password_hash"], password):
             helpers.record_attempt(key)
             flash("Email or password is incorrect.", "error")
+            hint = _reset_hint(user["id"]) if user else None
+            if hint:
+                flash(hint, "error")
             return render_template("login.html", email=email)
         helpers.clear_attempts(key)
         helpers.lift_expired_suspension(user)
@@ -37,9 +40,65 @@ def login():
             return render_template("login.html", email=email)
         session.clear()
         session["user_id"] = user["id"]
+        session["pw"] = helpers.pw_fingerprint(user)
         session.permanent = True
         return redirect(_safe_next(request.args.get("next")) or url_for("feed.index"))
     return render_template("login.html", email="")
+
+
+def _reset_hint(user_id):
+    """Tell someone who just failed to sign in where their password reset stands."""
+    last = db.one("SELECT * FROM password_resets WHERE user_id = ? AND status IN ('open','rejected') ORDER BY id DESC LIMIT 1", (user_id,))
+    if not last:
+        return None
+    if last["status"] == "open":
+        return "Your password reset is waiting for admin approval. Until then, your old password still applies."
+    resolved = helpers.parse_ts(last["resolved_at"])
+    if resolved and (helpers.utcnow() - resolved).days <= 14:
+        msg = "Your last password reset request was not approved."
+        return msg + (f" Reason: {last['reason']}" if last["reason"] else "")
+    return None
+
+
+@bp.route("/forgot", methods=["GET", "POST"])
+def forgot():
+    if g.user:
+        return redirect(url_for("feed.index"))
+    form = {"email": request.form.get("email", "").strip().lower(), "note": request.form.get("note", "").strip()}
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        errors = []
+        if not helpers.EMAIL_RE.match(form["email"]):
+            errors.append("Enter the email you signed up with.")
+        if len(password) < 8:
+            errors.append("The new password must be at least 8 characters.")
+        if password != request.form.get("confirm", ""):
+            errors.append("The new passwords don't match.")
+        if len(form["note"]) < 3:
+            errors.append("Tell the admin how they can confirm it's you.")
+        ip_key, mail_key = f"reset-ip:{request.remote_addr}", f"reset-mail:{form['email']}"
+        if not errors and (helpers.too_many_attempts(ip_key, 8, 3600) or helpers.too_many_attempts(mail_key, 3, 3600)):
+            errors.append("Too many requests. Try again in an hour, or ask the forum admin directly.")
+        if errors:
+            for e in errors:
+                flash(e, "error")
+            return render_template("forgot.html", form=form)
+        helpers.record_attempt(ip_key)
+        helpers.record_attempt(mail_key)
+        user = db.one("SELECT id, status FROM users WHERE email = ?", (form["email"],))
+        # Same answer whether or not the email exists, so this page can't be used to look people up.
+        if user and user["status"] == "active":
+            db.execute("UPDATE password_resets SET status='replaced', resolved_at=? WHERE user_id=? AND status='open'",
+                       (helpers.now_str(), user["id"]))
+            db.execute("INSERT INTO password_resets (user_id, new_hash, note) VALUES (?,?,?)",
+                       (user["id"], generate_password_hash(password), form["note"][:300]))
+        return redirect(url_for("auth.forgot_sent"))
+    return render_template("forgot.html", form=form)
+
+
+@bp.route("/forgot/sent")
+def forgot_sent():
+    return render_template("forgot_sent.html")
 
 
 @bp.route("/signup", methods=["GET", "POST"])
