@@ -109,6 +109,18 @@ SCHEMA = [
         reason TEXT DEFAULT '',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )""",
+    """CREATE TABLE IF NOT EXISTS password_resets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        new_hash TEXT NOT NULL,
+        note TEXT DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'open',
+        reason TEXT DEFAULT '',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        resolved_by INTEGER,
+        resolved_at TEXT
+    )""",
+    "CREATE INDEX IF NOT EXISTS idx_resets_status ON password_resets(status, user_id)",
     "CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id)",
     "CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id)",
     "CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, id)",
