@@ -18,6 +18,7 @@
       {{ m.nav('admin.users', url_for('admin.users'), 'users', 'Users') }}
       {{ m.nav('admin.posts', url_for('admin.posts'), 'image', 'Posts') }}
       {{ m.nav('admin.reports', url_for('admin.reports'), 'flag', 'Reports', open_reports_count, 'alert') }}
+      {{ m.nav('admin.password_resets', url_for('admin.password_resets'), 'key', 'Password resets', open_resets_count, 'alert') }}
       {% endif %}
     </nav>
     <div class="side-foot">
@@ -51,7 +52,7 @@
     {{ m.nav('feed.', url_for('feed.index'), 'feed', 'Feed') }}
     {{ m.nav('chat.', url_for('chat.index'), 'chat', 'Chats', unread_total) }}
     {{ m.nav('people.directory', url_for('people.directory'), 'people', 'People') }}
-    {% if g.user.role == 'admin' %}{{ m.nav('admin.', url_for('admin.dashboard'), 'shield', 'Admin', pending_count + open_reports_count, 'alert') }}{% endif %}
+    {% if g.user.role == 'admin' %}{{ m.nav('admin.', url_for('admin.dashboard'), 'shield', 'Admin', pending_count + open_reports_count + open_resets_count, 'alert') }}{% endif %}
     {{ m.nav('people.profile', url_for('people.profile', user_id=g.user.id), 'user', 'Me') }}
   </nav>
 </div>
