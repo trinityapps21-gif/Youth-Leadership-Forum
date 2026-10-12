@@ -17,7 +17,7 @@
           {% if r.post %}
             <div class="small muted">Written by <a href="{{ url_for('people.profile', user_id=r.post.user_id) }}">{{ r.post.author }}</a>{% if r.post.is_removed %} · <b style="color:var(--danger)">already taken down</b>{% endif %}</div>
             {% if r.post.content %}<div class="quote">{{ r.post.content[:400] }}</div>{% endif %}
-            {% if r.post.image %}<img class="thumb" src="{{ media_url(r.post.image) }}" alt="Attached photo">{% endif %}
+            {{ m.attachment(r.post, thumb=True) }}
           {% else %}<div class="small muted">This post no longer exists.</div>{% endif %}
         {% else %}
           {% if r.user %}<div class="small"><a href="{{ url_for('people.profile', user_id=r.user.id) }}">{{ r.user.name }}</a> · <span class="pill {{ r.user.status }}">{{ r.user.status|capitalize }}</span></div>
