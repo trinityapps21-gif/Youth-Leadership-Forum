@@ -31,6 +31,8 @@ SCHEMA = [
         user_id INTEGER NOT NULL,
         content TEXT DEFAULT '',
         image TEXT DEFAULT '',
+        media_type TEXT DEFAULT '',
+        media_name TEXT DEFAULT '',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         is_removed INTEGER DEFAULT 0,
         removed_reason TEXT DEFAULT '',
@@ -186,6 +188,19 @@ def insert(sql, params=()):
     return row[0] if row else None
 
 
+def _migrate(conn):
+    """Add columns that older databases don't have yet (safe to run on every start)."""
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(posts)").fetchall()}
+    added = False
+    for col in ("media_type", "media_name"):
+        if col not in cols:
+            conn.execute(f"ALTER TABLE posts ADD COLUMN {col} TEXT DEFAULT ''")
+            added = True
+    if added:  # posts made before video/music/documents were photos
+        conn.execute("UPDATE posts SET media_type = 'image' WHERE image != '' AND (media_type IS NULL OR media_type = '')")
+    conn.commit()
+
+
 def init_db(app):
     """Create tables and the first admin account if needed."""
     from werkzeug.security import generate_password_hash
@@ -197,6 +212,7 @@ def init_db(app):
             for stmt in SCHEMA:
                 conn.execute(stmt)
         conn.commit()
+        _migrate(conn)
         cfg = app.config
         has_admin = one("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
         if not has_admin and cfg["ADMIN_EMAIL"] and cfg["ADMIN_PASSWORD"]:
