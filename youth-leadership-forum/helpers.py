@@ -264,6 +264,72 @@ def save_image(file_storage, folder, max_px=1600):
     return storage.store_jpeg(buf.getvalue(), folder)
 
 
+MEDIA_RULES = {  # kind: (allowed extensions, max megabytes)
+    "video": ({"mp4", "mov", "m4v", "webm"}, 40),
+    "audio": ({"mp3", "m4a", "wav", "ogg", "aac"}, 15),
+    "document": ({"pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx", "txt"}, 10),
+}
+IMAGE_EXTS = {"jpg", "jpeg", "jpe", "png", "webp", "gif", "bmp", "heic", "heif"}
+FILE_HELP = "Photos (JPG, PNG, WEBP, GIF), videos up to 40 MB (MP4, MOV, WEBM), music up to 15 MB (MP3, M4A, WAV, OGG), or documents up to 10 MB (PDF, Word, PowerPoint, Excel, TXT)."
+
+
+def _looks_like(ext, head):
+    """Check the first bytes of a file match what its extension claims."""
+    if ext == "pdf":
+        return head.startswith(b"%PDF")
+    if ext in ("docx", "pptx", "xlsx"):
+        return head.startswith(b"PK")
+    if ext in ("doc", "ppt", "xls"):
+        return head.startswith(b"\xd0\xcf\x11\xe0")
+    if ext in ("mp4", "mov", "m4v", "m4a"):
+        return head[4:8] in (b"ftyp", b"moov", b"mdat", b"wide", b"free", b"skip")
+    if ext == "webm":
+        return head.startswith(b"\x1a\x45\xdf\xa3")
+    if ext == "mp3":
+        return head.startswith(b"ID3") or (len(head) > 1 and head[0] == 0xFF and head[1] & 0xE0 == 0xE0)
+    if ext == "aac":
+        return len(head) > 1 and head[0] == 0xFF and head[1] & 0xF0 == 0xF0
+    if ext == "wav":
+        return head.startswith(b"RIFF") and head[8:12] == b"WAVE"
+    if ext == "ogg":
+        return head.startswith(b"OggS")
+    if ext == "txt":
+        try:
+            head.decode("utf-8")
+            return b"\x00" not in head
+        except UnicodeDecodeError:
+            return False
+    return False
+
+
+def save_media(file_storage, folder):
+    """Store one attachment of any allowed kind.
+    Returns {"url", "kind", "name"} or None when nothing was attached. Raises ValueError with a friendly message."""
+    if not file_storage or not file_storage.filename:
+        return None
+    original = os.path.basename(file_storage.filename.replace("\\", "/"))
+    ext = original.rsplit(".", 1)[-1].lower() if "." in original else ""
+    name = re.sub(r"[^\w .()\-]+", "_", original)[:120] or "file"
+    if ext in IMAGE_EXTS or (not ext and (file_storage.mimetype or "").startswith("image/")):
+        return {"url": save_image(file_storage, folder), "kind": "image", "name": name}
+    kind = next((k for k, (exts, _) in MEDIA_RULES.items() if ext in exts), None)
+    if not kind:
+        raise ValueError("That file type isn't supported. You can add " + FILE_HELP)
+    stream = file_storage.stream
+    stream.seek(0, os.SEEK_END)
+    size = stream.tell()
+    stream.seek(0)
+    if size == 0:
+        raise ValueError("That file is empty.")
+    if size > MEDIA_RULES[kind][1] * 1024 * 1024:
+        raise ValueError(f"That {kind} is too large. The limit is {MEDIA_RULES[kind][1]} MB.")
+    head = stream.read(2048)
+    stream.seek(0)
+    if not _looks_like(ext, head):
+        raise ValueError(f"That file doesn't look like a real .{ext} file.")
+    return {"url": storage.store_file(stream, folder, kind, ext, size), "kind": kind, "name": name}
+
+
 def delete_upload(value):
     storage.delete(value)
 
