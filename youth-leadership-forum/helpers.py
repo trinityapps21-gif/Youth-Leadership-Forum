@@ -282,23 +282,18 @@ def _looks_like(ext, head):
     if ext in ("doc", "ppt", "xls"):
         return head.startswith(b"\xd0\xcf\x11\xe0")
     if ext in ("mp4", "mov", "m4v", "m4a"):
-        return head[4:8] in (b"ftyp", b"moov", b"mdat", b"wide", b"free", b"skip")
+        return head[4:8] in (b"ftyp", b"moov", b"mdat", b"wide", b"free", b"skip", b"pnot", b"junk")
     if ext == "webm":
         return head.startswith(b"\x1a\x45\xdf\xa3")
-    if ext == "mp3":
-        return head.startswith(b"ID3") or (len(head) > 1 and head[0] == 0xFF and head[1] & 0xE0 == 0xE0)
-    if ext == "aac":
-        return len(head) > 1 and head[0] == 0xFF and head[1] & 0xF0 == 0xF0
+    if ext in ("mp3", "aac"):
+        # Real files often start with tags or padding, so look for a tag or an audio frame near the start.
+        return head.startswith(b"ID3") or any(head[i] == 0xFF and head[i + 1] & 0xE0 == 0xE0 for i in range(min(len(head), 4096) - 1))
     if ext == "wav":
         return head.startswith(b"RIFF") and head[8:12] == b"WAVE"
     if ext == "ogg":
         return head.startswith(b"OggS")
     if ext == "txt":
-        try:
-            head.decode("utf-8")
-            return b"\x00" not in head
-        except UnicodeDecodeError:
-            return False
+        return b"\x00" not in head or head[:2] in (b"\xff\xfe", b"\xfe\xff")  # plain text, any encoding
     return False
 
 
