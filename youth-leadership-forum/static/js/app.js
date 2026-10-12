@@ -142,19 +142,95 @@
     });
   }
 
-  // ---- composer image preview ----
-  var fileInput = document.getElementById("post-image");
-  if (fileInput) {
+  // ---- composer: photo / video / music / document ----
+  var composer = document.getElementById("post-btn") && document.getElementById("post-btn").form;
+  if (composer) {
+    var picks = Array.prototype.slice.call(composer.querySelectorAll("input.pick"));
     var prev = document.getElementById("post-preview");
-    fileInput.addEventListener("change", function () {
-      var f = fileInput.files[0];
+    var errBox = document.getElementById("post-error");
+    var prog = document.getElementById("post-progress");
+    var LIMIT = { image: 25, video: 40, audio: 15, document: 10 };
+    var chosen = null; // the file that will be sent
+
+    function showError(msg) { errBox.textContent = msg || ""; errBox.classList.toggle("hidden", !msg); }
+    function clearAll() { picks.forEach(function (p) { p.value = ""; }); chosen = null; prev.textContent = ""; showError(""); }
+    function size(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; }
+
+    // Big phone photos: shrink to 1600px in the browser so they upload fast.
+    function shrinkImage(file) {
+      return new Promise(function (resolve) {
+        if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 1500000) return resolve(file);
+        var url = URL.createObjectURL(file), img = new Image();
+        img.onload = function () {
+          var k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+          c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          c.toBlob(function (blob) {
+            URL.revokeObjectURL(url);
+            if (!blob || blob.size >= file.size) return resolve(file);
+            resolve(new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" }));
+          }, "image/jpeg", 0.85);
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+        img.src = url;
+      });
+    }
+
+    function preview(file, kind) {
       prev.textContent = "";
-      if (!f) return;
-      var box = el("div", "preview"), img = el("img");
-      img.src = URL.createObjectURL(f); img.alt = "Photo preview";
-      var rm = el("button", "btn btn-sm btn-ghost", "Remove photo"); rm.type = "button"; rm.style.marginTop = ".4rem";
-      rm.addEventListener("click", function () { fileInput.value = ""; prev.textContent = ""; });
-      box.appendChild(img); box.appendChild(rm); prev.appendChild(box);
+      var box = el("div", "preview"), url = URL.createObjectURL(file), node;
+      if (kind === "image") { node = el("img"); node.src = url; node.alt = "Photo preview"; }
+      else if (kind === "video") { node = el("video"); node.src = url; node.controls = true; node.preload = "metadata"; node.setAttribute("playsinline", ""); }
+      else if (kind === "audio") { node = el("audio"); node.src = url; node.controls = true; }
+      else { node = el("div", "post-file"); node.appendChild(el("span", "fname", file.name)); }
+      box.appendChild(node);
+      box.appendChild(el("div", "small muted", file.name + " · " + size(file.size)));
+      var rm = el("button", "btn btn-sm btn-ghost", "Remove"); rm.type = "button"; rm.style.marginTop = ".4rem";
+      rm.addEventListener("click", clearAll);
+      box.appendChild(rm); prev.appendChild(box);
+    }
+
+    picks.forEach(function (input) {
+      input.addEventListener("change", function () {
+        var f = input.files[0], kind = input.dataset.kind;
+        picks.forEach(function (p) { if (p !== input) p.value = ""; });
+        showError("");
+        if (!f) { clearAll(); return; }
+        if (f.size > LIMIT[kind] * 1048576) {
+          clearAll(); showError("That " + kind + " is too large. The limit is " + LIMIT[kind] + " MB.");
+          return;
+        }
+        (kind === "image" ? shrinkImage(f) : Promise.resolve(f)).then(function (file) {
+          chosen = { file: file, kind: kind }; preview(file, kind);
+        });
+      });
+    });
+
+    // Send with a progress bar. Without JavaScript the form still posts normally.
+    composer.addEventListener("submit", function (e) {
+      if (!chosen) return;
+      e.preventDefault();
+      var fd = new FormData(composer);
+      fd.delete("media");
+      fd.append("media", chosen.file, chosen.file.name);
+      var xhr = new XMLHttpRequest(), btn = document.getElementById("post-btn"), fill = prog.querySelector(".fill");
+      btn.disabled = true; showError(""); prog.classList.remove("hidden"); fill.style.width = "0%";
+      xhr.upload.onprogress = function (ev) { if (ev.lengthComputable) fill.style.width = Math.round(ev.loaded / ev.total * 100) + "%"; };
+      xhr.onload = function () {
+        var data = {};
+        try { data = JSON.parse(xhr.responseText); } catch (x) {}
+        if (xhr.status === 413) { fail("That file is too large to upload."); return; }
+        if (xhr.status === 403 || xhr.status === 401) { fail("Your session expired. Reload the page and sign in again."); return; }
+        if (xhr.status !== 200 || !data.ok) { fail(data.error || "The upload didn't finish. Try again."); return; }
+        window.location.href = composer.getAttribute("action").replace(/\/post$/, "");  // reload the feed
+      };
+      xhr.onerror = function () { fail("The upload didn't finish. Check your connection and try again."); };
+      xhr.ontimeout = xhr.onerror; xhr.timeout = 180000;
+      function fail(msg) { btn.disabled = false; prog.classList.add("hidden"); showError(msg); }
+      xhr.open("POST", composer.getAttribute("action"));
+      xhr.setRequestHeader("X-CSRF-Token", csrf);
+      xhr.setRequestHeader("X-Upload", "1");
+      xhr.send(fd);
     });
   }
 
