@@ -133,8 +133,11 @@ SCHEMA = [
 def _connect():
     cfg = current_app.config
     if cfg["TURSO_DATABASE_URL"]:
-        import libsql
-        return libsql.connect(database=cfg["TURSO_DATABASE_URL"], auth_token=cfg["TURSO_AUTH_TOKEN"])
+        if cfg["TURSO_DRIVER"] == "libsql":
+            import libsql
+            return libsql.connect(database=cfg["TURSO_DATABASE_URL"], auth_token=cfg["TURSO_AUTH_TOKEN"])
+        from turso_http import Connection
+        return Connection(cfg["TURSO_DATABASE_URL"], cfg["TURSO_AUTH_TOKEN"], timeout=cfg["TURSO_TIMEOUT"])
     return sqlite3.connect(cfg["LOCAL_DB_PATH"])
 
 
@@ -188,8 +191,11 @@ def init_db(app):
     from werkzeug.security import generate_password_hash
     with app.app_context():
         conn = get_db()
-        for stmt in SCHEMA:
-            conn.execute(stmt)
+        if hasattr(conn, "batch"):
+            conn.batch(SCHEMA)  # one round trip instead of one per table
+        else:
+            for stmt in SCHEMA:
+                conn.execute(stmt)
         conn.commit()
         cfg = app.config
         has_admin = one("SELECT id FROM users WHERE role = 'admin' LIMIT 1")
