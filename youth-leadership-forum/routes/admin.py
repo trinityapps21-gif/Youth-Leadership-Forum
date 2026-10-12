@@ -246,7 +246,7 @@ def reports():
     for r in rows:
         if r["target_type"] == "post":
             r["post"] = db.one(
-                "SELECT p.id, p.content, p.image, p.is_removed, p.user_id, u.name AS author FROM posts p JOIN users u ON u.id=p.user_id WHERE p.id=?",
+                "SELECT p.id, p.content, p.image, p.media_type, p.media_name, p.is_removed, p.user_id, u.name AS author FROM posts p JOIN users u ON u.id=p.user_id WHERE p.id=?",
                 (r["target_id"],))
         else:
             r["user"] = db.one("SELECT id, name, status, role FROM users WHERE id=?", (r["target_id"],))
