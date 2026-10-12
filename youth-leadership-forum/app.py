@@ -87,7 +87,9 @@ def create_app():
 
     @app.route("/uploads/<path:filename>", endpoint="uploads")
     def uploads(filename):
-        return send_from_directory(app.config["UPLOAD_DIR"], filename, max_age=86400)
+        # Documents are always downloaded, never opened in the page, as a safety measure.
+        is_doc = filename.rsplit(".", 1)[-1].lower() in helpers.MEDIA_RULES["document"][0]
+        return send_from_directory(app.config["UPLOAD_DIR"], filename, max_age=86400, as_attachment=is_doc)
 
     from routes.admin import bp as admin_bp
     from routes.auth import bp as auth_bp
@@ -136,7 +138,7 @@ def create_app():
             401: ("Please sign in", "You need to sign in to see this page."),
             403: ("No access", "You don't have permission to open this page."),
             404: ("Page not found", "That page doesn't exist or has been removed."),
-            413: ("File too large", "Photos must be under 8 MB."),
+            413: ("File too large", "Videos can be up to 40 MB, music up to 15 MB and documents up to 10 MB."),
             500: ("Something broke on our side", "Try again in a moment. If it keeps happening, tell the forum admin."),
         }
         title, text = messages.get(code, messages[500])
