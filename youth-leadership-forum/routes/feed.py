@@ -10,7 +10,7 @@ PAGE = 15
 
 
 def fetch_posts(uid, where="", params=(), before=None, limit=PAGE + 1):
-    sql = """SELECT p.id, p.user_id, p.content, p.image, p.created_at,
+    sql = """SELECT p.id, p.user_id, p.content, p.image, p.media_type, p.media_name, p.created_at,
                     u.name AS author_name, u.avatar AS author_avatar, u.role AS author_role,
                     (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS like_count,
                     (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id AND l.user_id = ?) AS liked,
@@ -44,22 +44,36 @@ def index():
 @bp.route("/feed/post", methods=["POST"])
 @login_required
 def create_post():
+    # The composer uploads with a progress bar (JavaScript) and wants JSON back;
+    # a plain form post (no JavaScript) gets a normal redirect with a message.
+    wants_json = request.headers.get("X-Upload") == "1"
+
+    def finish(message, ok):
+        if wants_json:
+            if ok:
+                flash(message, "ok")  # shown on the feed after the page reloads
+            return jsonify(ok=ok, error=None if ok else message), 200 if ok else 400
+        flash(message, "ok" if ok else "error")
+        return redirect(url_for("feed.index"))
+
     content = request.form.get("content", "").strip()
-    try:
-        image = helpers.save_image(request.files.get("image"), "posts")
-    except ValueError as e:
-        flash(str(e), "error")
-        return redirect(url_for("feed.index"))
-    if not content and not image:
-        flash("Write something or add a photo to post.", "error")
-        return redirect(url_for("feed.index"))
     if len(content) > 2000:
-        helpers.delete_upload(image)
-        flash("Posts can be up to 2,000 characters.", "error")
-        return redirect(url_for("feed.index"))
-    db.execute("INSERT INTO posts (user_id, content, image) VALUES (?,?,?)", (g.user["id"], content, image or ""))
-    flash("Posted.", "ok")
-    return redirect(url_for("feed.index"))
+        return finish("Posts can be up to 2,000 characters.", False)
+    # The composer has separate Photo / Video / Music / Document buttons, all named "media".
+    picked = [f for f in request.files.getlist("media") + request.files.getlist("image") if f and f.filename]
+    media = None
+    if picked:
+        try:
+            media = helpers.save_media(picked[0], "posts")
+        except ValueError as e:
+            return finish(str(e), False)
+    if not content and not media:
+        return finish("Write something or add a photo, video, song or document to post.", False)
+    db.execute(
+        "INSERT INTO posts (user_id, content, image, media_type, media_name) VALUES (?,?,?,?,?)",
+        (g.user["id"], content, media["url"] if media else "", media["kind"] if media else "", media["name"] if media else ""),
+    )
+    return finish("Posted.", True)
 
 
 @bp.route("/posts/<int:post_id>/delete", methods=["POST"])
