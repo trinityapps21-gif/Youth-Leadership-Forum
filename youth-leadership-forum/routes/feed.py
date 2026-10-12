@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, flash, g, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, abort, current_app, flash, g, jsonify, redirect, render_template, request, url_for
 
 import db
 import helpers
@@ -66,7 +66,12 @@ def create_post():
         try:
             media = helpers.save_media(picked[0], "posts")
         except ValueError as e:
-            return finish(str(e), False)
+            current_app.logger.warning("Upload refused (%s, %s bytes): %s %s", picked[0].filename,
+                                       request.content_length, e, getattr(e, "detail", ""))
+            msg = str(e)
+            if g.user["role"] == "admin" and getattr(e, "detail", ""):
+                msg += f" [Admin detail: {e.detail}]"
+            return finish(msg, False)
     if not content and not media:
         return finish("Write something or add a photo, video, song or document to post.", False)
     db.execute(
