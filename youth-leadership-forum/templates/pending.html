@@ -2,8 +2,35 @@
 {% set art = 'signup-panel.jpg' %}
 {% block title %}Request received · {{ site_name }}{% endblock %}
 {% block card %}
-<div class="done-mark" aria-hidden="true">{{ m.icon('check') }}</div>
-<h1>Thanks, we've got your request</h1>
-<p class="lead">An admin will review your account. Once it's approved, sign in with the email and password you just chose.</p>
-<a class="btn btn-block" href="{{ url_for('auth.login') }}">Back to sign in</a>
+<div id="wait">
+  <div class="done-mark" aria-hidden="true">{{ m.icon('check') }}</div>
+  <h1>Thanks, we've got your request</h1>
+  <p class="lead">An admin will review your account. Once it's approved, sign in with the email and password you just chose. You can keep this page open and it will tell you the moment you're approved.</p>
+  <a class="btn btn-block" href="{{ url_for('auth.login') }}">Back to sign in</a>
+</div>
+<div id="approved" class="hidden">
+  <div class="done-mark" aria-hidden="true">{{ m.icon('check') }}</div>
+  <h1>You're approved!</h1>
+  <p class="lead">Your account is now active. Sign in with the email and password you chose and start using {{ site_name }}.</p>
+  <a class="btn btn-block" href="{{ url_for('auth.login') }}">Sign in now</a>
+</div>
+<script>
+(function () {
+  var timer = setInterval(check, 8000);
+  function check() {
+    if (document.hidden) return;
+    fetch("{{ url_for('auth.pending_status') }}", { credentials: "same-origin" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.status === "active") {
+          clearInterval(timer);
+          document.getElementById("wait").classList.add("hidden");
+          document.getElementById("approved").classList.remove("hidden");
+          document.title = "You're approved!";
+        }
+      }).catch(function () {});
+  }
+  document.addEventListener("visibilitychange", check);
+})();
+</script>
 {% endblock %}
