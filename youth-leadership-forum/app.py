@@ -107,6 +107,18 @@ def create_app():
         # Browsers ask for /favicon.ico by default; send them to the real icon.
         return redirect(url_for("static", filename="img/favicon-64.png"), code=301)
 
+    @app.route("/healthz/db")
+    def healthz_db():
+        """Tells you whether the database answers, and how fast. Shows no data."""
+        import time
+        started = time.time()
+        try:
+            db.one("SELECT 1 AS ok")
+        except Exception as e:  # noqa: BLE001
+            app.logger.error("Database health check failed: %s: %s", type(e).__name__, e)
+            return {"database": "error", "reason": str(e)[:200]}, 503
+        return {"database": "ok", "ms": round((time.time() - started) * 1000)}
+
     @app.route("/healthz")
     def healthz():
         return {"ok": True}
