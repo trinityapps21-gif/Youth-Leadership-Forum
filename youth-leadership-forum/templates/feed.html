@@ -9,14 +9,25 @@
   <div class="row" style="align-items:flex-start">
     {{ m.avatar(g.user.name, g.user.avatar, 'md') }}
     <div class="grow">
-      <label class="sr-only" for="content">Share something</label>
-      <textarea id="content" name="content" maxlength="2000" placeholder="Share an idea, a win, or a question with the forum, {{ g.user.name.split()[0] }}"></textarea>
+      <label class="sr-only" for="post-text">Share something</label>
+      <textarea id="post-text" name="content" maxlength="2000" placeholder="Share an idea, a win, or a question with the forum, {{ g.user.name.split()[0] }}"></textarea>
       <div id="post-preview"></div>
     </div>
   </div>
+  <div id="post-error" class="small hidden" role="alert" style="color:var(--danger);margin-top:.4rem"></div>
+  <div id="post-progress" class="hidden" aria-live="polite"><div class="track"><div class="fill"></div></div><span class="small muted">Uploading…</span></div>
   <div class="bar">
-    <label class="btn btn-ghost btn-sm" style="cursor:pointer">{{ m.icon('image') }} Add photo<input id="post-image" type="file" name="image" accept="image/*" class="sr-only"></label>
-    <button class="btn" type="submit">Post</button>
+    <div class="attach">
+      <label class="btn btn-ghost btn-sm" for="pick-photo">{{ m.icon('image') }} <span>Photo</span></label>
+      <input id="pick-photo" class="sr-only pick" data-kind="image" type="file" name="media" accept="image/*">
+      <label class="btn btn-ghost btn-sm" for="pick-video">{{ m.icon('video') }} <span>Video</span></label>
+      <input id="pick-video" class="sr-only pick" data-kind="video" type="file" name="media" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.m4v,.webm">
+      <label class="btn btn-ghost btn-sm" for="pick-audio">{{ m.icon('music') }} <span>Music</span></label>
+      <input id="pick-audio" class="sr-only pick" data-kind="audio" type="file" name="media" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac">
+      <label class="btn btn-ghost btn-sm" for="pick-doc">{{ m.icon('file') }} <span>Document</span></label>
+      <input id="pick-doc" class="sr-only pick" data-kind="document" type="file" name="media" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt">
+    </div>
+    <button id="post-btn" class="btn" type="submit">Post</button>
   </div>
 </form>
 
