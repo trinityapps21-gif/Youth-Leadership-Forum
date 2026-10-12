@@ -75,9 +75,11 @@ def store_jpeg(data: bytes, folder: str):
                 overwrite=False,
                 format="jpg",
             )
-        except Exception:
+        except Exception as e:
             log.exception("Cloudinary upload failed")
-            raise ValueError("The photo could not be saved right now. Try again in a moment.")
+            err = ValueError("The photo could not be saved right now. Try again in a moment.")
+            err.detail = f"{type(e).__name__}: {e}"[:250]
+            raise err
         return res["secure_url"]
     folder_path = os.path.join(current_app.config["UPLOAD_DIR"], folder)
     os.makedirs(folder_path, exist_ok=True)
@@ -102,9 +104,11 @@ def store_file(stream, folder: str, kind: str, ext: str, size: int):
                                                        overwrite=False, chunk_size=6_000_000)
             else:
                 res = cloudinary.uploader.upload(stream, public_id=public_id, resource_type=rtype, overwrite=False)
-        except Exception:
+        except Exception as e:
             log.exception("Cloudinary upload failed")
-            raise ValueError("The file could not be saved right now. Try again in a moment.")
+            err = ValueError("The file could not be saved right now. Try again in a moment.")
+            err.detail = f"{type(e).__name__}: {e}"[:250]
+            raise err
         return res["secure_url"]
     folder_path = os.path.join(current_app.config["UPLOAD_DIR"], folder)
     os.makedirs(folder_path, exist_ok=True)
