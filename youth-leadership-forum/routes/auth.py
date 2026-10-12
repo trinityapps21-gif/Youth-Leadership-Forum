@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, jsonify, g, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import db
@@ -33,15 +33,20 @@ def login():
         helpers.clear_attempts(key)
         helpers.lift_expired_suspension(user)
         if user["status"] == "pending":
+            session["pending_id"] = user["id"]
             return redirect(url_for("auth.pending"))
         msg = helpers.status_message(user)
         if msg:
             flash(msg, "error")
             return render_template("login.html", email=email)
+        first_time = not user["last_seen"]
         session.clear()
         session["user_id"] = user["id"]
         session["pw"] = helpers.pw_fingerprint(user)
         session.permanent = True
+        if first_time:
+            flash(f"Welcome to {current_app.config['SITE_NAME']}, {user['name'].split()[0]}! "
+                  "Your account was approved. Say hello in the feed or start a chat.", "ok")
         return redirect(_safe_next(request.args.get("next")) or url_for("feed.index"))
     return render_template("login.html", email="")
 
@@ -126,12 +131,13 @@ def signup():
             for e in errors:
                 flash(e, "error")
             return render_template("signup.html", form=form)
-        db.execute(
+        new_id = db.insert(
             """INSERT INTO users (name, email, password_hash, role, status, organization, signup_note)
                VALUES (?,?,?,?,?,?,?)""",
             (form["name"][:80], form["email"], generate_password_hash(password), "member", "pending",
              form["organization"][:120], form["signup_note"][:500]),
         )
+        session["pending_id"] = new_id
         return redirect(url_for("auth.pending"))
     return render_template("signup.html", form=form)
 
@@ -139,6 +145,14 @@ def signup():
 @bp.route("/pending")
 def pending():
     return render_template("pending.html")
+
+
+@bp.route("/pending/status")
+def pending_status():
+    """Lets the waiting page notice approval. Only ever reports on the browser's own sign-up."""
+    uid = session.get("pending_id")
+    row = db.one("SELECT status FROM users WHERE id = ?", (uid,)) if uid else None
+    return jsonify(status=row["status"] if row else "unknown")
 
 
 @bp.route("/logout", methods=["POST"])
