@@ -16,7 +16,7 @@
       {% if p.author_status != 'active' %}<div><span class="pill {{ p.author_status }}">{{ p.author_status|capitalize }}</span></div>{% endif %}</td>
     <td>
       {% if p.content %}<div class="quote">{{ p.content[:400] }}{{ '…' if p.content|length > 400 }}</div>{% endif %}
-      {% if p.image %}<a href="{{ media_url(p.image) }}" target="_blank" rel="noopener"><img class="thumb" src="{{ media_url(p.image) }}" alt="Attached photo"></a>{% endif %}
+      {{ m.attachment(p, thumb=True) }}
       {% if p.is_removed %}<div class="small" style="color:var(--danger)"><b>Taken down:</b> {{ p.removed_reason }}</div>{% endif %}
       <div class="small muted">{{ p.like_count }} likes · {{ p.comment_count }} comments</div>
     </td>
