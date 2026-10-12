@@ -62,6 +62,16 @@ def root_folder():
     return current_app.config["CLOUDINARY_FOLDER"]
 
 
+def _explain(e):
+    """Short technical reason for admins, with the fix for the most common key problem."""
+    text = f"{type(e).__name__}: {e}"
+    if "missing permissions" in text or "NotAllowed" in text:
+        return "This Cloudinary API key is not allowed to upload. In Cloudinary go to Settings > API Keys and use a key with full access, then update CLOUDINARY_URL in Render."
+    if "Invalid" in text and ("Signature" in text or "api_key" in text.lower()):
+        return "Cloudinary rejected the key or secret. Re-copy CLOUDINARY_URL from the Cloudinary dashboard."
+    return text[:250]
+
+
 def store_jpeg(data: bytes, folder: str):
     """Save processed JPEG bytes. Returns the value to keep in the database."""
     name = secrets.token_hex(12)
@@ -78,7 +88,7 @@ def store_jpeg(data: bytes, folder: str):
         except Exception as e:
             log.exception("Cloudinary upload failed")
             err = ValueError("The photo could not be saved right now. Try again in a moment.")
-            err.detail = f"{type(e).__name__}: {e}"[:250]
+            err.detail = _explain(e)
             raise err
         return res["secure_url"]
     folder_path = os.path.join(current_app.config["UPLOAD_DIR"], folder)
@@ -107,7 +117,7 @@ def store_file(stream, folder: str, kind: str, ext: str, size: int):
         except Exception as e:
             log.exception("Cloudinary upload failed")
             err = ValueError("The file could not be saved right now. Try again in a moment.")
-            err.detail = f"{type(e).__name__}: {e}"[:250]
+            err.detail = _explain(e)
             raise err
         return res["secure_url"]
     folder_path = os.path.join(current_app.config["UPLOAD_DIR"], folder)
