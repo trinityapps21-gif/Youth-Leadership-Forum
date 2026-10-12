@@ -12,7 +12,7 @@ class Config:
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "0") == "1"
     PERMANENT_SESSION_LIFETIME = 60 * 60 * 24 * 14  # 14 days
-    MAX_CONTENT_LENGTH = 8 * 1024 * 1024  # 8 MB per request
+    MAX_CONTENT_LENGTH = 45 * 1024 * 1024  # biggest allowed upload is a 40 MB video
 
     TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL", "").strip()
     TURSO_AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN", "").strip()
