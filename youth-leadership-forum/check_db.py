@@ -22,6 +22,7 @@ def check_database():
     print("  Mode:        ", "Turso (remote)" if remote else "local SQLite file (Turso keys not set)")
     if remote:
         print("  URL:         ", cfg["TURSO_DATABASE_URL"])
+        print("  Driver:      ", cfg["TURSO_DRIVER"], f"(timeout {cfg['TURSO_TIMEOUT']}s)")
     try:
         with app.app_context():
             assert db.one("SELECT 1 AS ok")["ok"] == 1
