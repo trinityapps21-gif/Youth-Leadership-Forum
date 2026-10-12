@@ -335,3 +335,23 @@ dialog .opts input { accent-color: var(--green); width: 18px; height: 18px; }
 .plain { margin: 0 0 1.4rem; padding-left: 1.2rem; color: var(--muted); }
 .plain li { margin: .4rem 0; }
 .field .hint a { font-weight: 600; color: var(--green); }
+
+/* ---- attachments: video, music, documents ---- */
+.composer .attach { display: flex; flex-wrap: wrap; gap: .25rem; }
+.composer .attach .btn { cursor: pointer; }
+.composer .pick:focus-visible + .btn, .composer .attach .btn:focus-within { outline: 2px solid var(--navy); outline-offset: 2px; }
+.composer .preview video, .composer .preview audio { width: 100%; max-height: 280px; border-radius: var(--radius-sm); background: #000; }
+.composer .preview audio { background: none; }
+#post-progress { display: flex; align-items: center; gap: .7rem; margin-top: .5rem; }
+#post-progress .track { flex: 1; height: 8px; border-radius: 4px; background: #e6ebf5; overflow: hidden; }
+#post-progress .fill { height: 100%; width: 0; background: var(--navy); transition: width .2s; }
+.post-video { width: 100%; max-height: 560px; border-radius: var(--radius-sm); margin: .3rem 0 .6rem; background: #000; }
+.post-audio, .post-file { display: flex; align-items: center; gap: .8rem; padding: .8rem 1rem; margin: .3rem 0 .6rem; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #f6f8fc; color: inherit; text-decoration: none; }
+.post-audio svg, .post-file svg { width: 28px; height: 28px; flex: none; color: var(--navy); }
+.post-audio audio { width: 100%; margin-top: .3rem; }
+.post-file { transition: background .15s; }
+.post-file:hover { background: #eef2fa; }
+.post-file .fname, .post-audio .fname { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.icon-btn .lbl { font-weight: 600; }
+.icon-btn .n { min-width: 1ch; }
+@media (max-width: 420px) { .composer .attach .btn span { display: none; } }
