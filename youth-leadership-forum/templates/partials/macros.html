@@ -14,6 +14,9 @@
 {%- elif name == 'comment' -%}<path d="M20 15a2 2 0 0 1-2 2H8l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2Z"/>
 {%- elif name == 'flag' -%}<path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/>
 {%- elif name == 'image' -%}<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-9 9"/>
+{%- elif name == 'video' -%}<rect x="3" y="5.5" width="13" height="13" rx="2.5"/><path d="m16 10.5 5-3v9l-5-3"/>
+{%- elif name == 'music' -%}<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>
+{%- elif name == 'file' -%}<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>
 {%- elif name == 'send' -%}<path d="m21 3-9.5 18-2.3-7.7L1.5 11 21 3Z"/><path d="M21 3 9.2 13.3"/>
 {%- elif name == 'back' -%}<path d="m15 5-7 7 7 7"/>
 {%- elif name == 'more' -%}<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>
@@ -31,6 +34,25 @@
   {{ icon(ic) }}<span>{{ label }}</span>
   {%- if badge is not none %}<span class="badge {{ cls }}{% if not badge %} hidden{% endif %}{% if ic == 'chat' %} js-unread{% endif %}">{{ badge }}</span>{% endif -%}
 </a>
+{%- endmacro %}
+
+{% macro attachment(post, who='', thumb=False) -%}
+{%- set kind = post.media_type or ('image' if post.image else '') -%}
+{%- if post.image and kind -%}
+{%- set url = media_url(post.image) -%}
+{%- if thumb -%}
+  <a href="{{ url }}" target="_blank" rel="noopener" class="small">
+  {%- if kind == 'image' -%}<img class="thumb" src="{{ url }}" alt="Attached photo">{%- else -%}{{ icon(kind if kind != 'document' else 'file') }} {{ post.media_name or ('Attached ' ~ kind) }}{%- endif -%}</a>
+{%- elif kind == 'image' -%}
+  <img class="post-img" src="{{ url }}" alt="Photo shared by {{ who }}" loading="lazy">
+{%- elif kind == 'video' -%}
+  <video class="post-video" src="{{ url }}" controls preload="metadata" playsinline></video>
+{%- elif kind == 'audio' -%}
+  <div class="post-audio">{{ icon('music') }}<div class="grow"><div class="fname">{{ post.media_name or 'Audio' }}</div><audio src="{{ url }}" controls preload="none"></audio></div></div>
+{%- else -%}
+  <a class="post-file" href="{{ url }}" target="_blank" rel="noopener" download="{{ post.media_name }}">{{ icon('file') }}<span class="grow"><span class="fname">{{ post.media_name or 'Document' }}</span><span class="small muted">Tap to open or download</span></span></a>
+{%- endif -%}
+{%- endif -%}
 {%- endmacro %}
 
 {% macro csrf() -%}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{%- endmacro %}
