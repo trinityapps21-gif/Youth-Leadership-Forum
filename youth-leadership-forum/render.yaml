@@ -6,7 +6,7 @@ services:
     runtime: python
     plan: free            # change to "starter" for an always-on site
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --workers 2 --threads 4 --timeout 60
+    startCommand: gunicorn app:app --workers 2 --threads 4 --timeout 120
     healthCheckPath: /healthz
     autoDeploy: true
     envVars:
