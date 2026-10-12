@@ -16,6 +16,9 @@ class Config:
 
     TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL", "").strip()
     TURSO_AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN", "").strip()
+    # "http" (default) talks to Turso over HTTPS with time limits. "libsql" uses the native package.
+    TURSO_DRIVER = os.getenv("TURSO_DRIVER", "http").strip().lower()
+    TURSO_TIMEOUT = int(os.getenv("TURSO_TIMEOUT", "15"))
     LOCAL_DB_PATH = os.getenv("LOCAL_DB_PATH", os.path.join(BASE_DIR, "local.db"))
 
     ADMIN_NAME = os.getenv("ADMIN_NAME", "Forum Admin")
