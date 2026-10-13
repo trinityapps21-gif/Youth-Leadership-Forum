@@ -355,3 +355,11 @@ dialog .opts input { accent-color: var(--green); width: 18px; height: 18px; }
 .icon-btn .lbl { font-weight: 600; }
 .icon-btn .n { min-width: 1ch; }
 @media (max-width: 420px) { .composer .attach .btn span { display: none; } }
+
+/* ---- who liked ---- */
+.post-actions .js-likers { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.likers-list { list-style: none; margin: .8rem 0 0; padding: 0; max-height: 55vh; overflow-y: auto; }
+.liker { display: flex; align-items: center; gap: .7rem; padding: .5rem .3rem; border-radius: 10px; color: inherit; text-decoration: none; }
+.liker:hover { background: #eef2fa; }
+.liker .nm { display: block; font-weight: 600; }
+.liker .sub { display: block; }
