@@ -23,6 +23,7 @@
   <div class="post-actions">
     <button type="button" class="icon-btn js-like {{ 'liked' if post.liked }}" data-id="{{ post.id }}" aria-pressed="{{ 'true' if post.liked else 'false' }}" aria-label="Like">{{ m.icon('heart') }}<span class="n">{{ post.like_count }}</span><span class="lbl">Like</span></button>
     <button type="button" class="icon-btn js-toggle-comments" aria-label="Comments">{{ m.icon('comment') }}<span class="n">{{ post.comment_count }}</span><span class="lbl">Comment</span></button>
+    <button type="button" class="icon-btn js-likers push {{ 'hidden' if not post.like_count }}" data-id="{{ post.id }}" aria-haspopup="dialog"><span class="likers-n">{{ post.like_count }}</span> <span class="likers-w">{{ 'like' if post.like_count == 1 else 'likes' }}</span></button>
   </div>
   <div class="comment-box hidden" data-id="{{ post.id }}">
     <div class="comments"></div>
