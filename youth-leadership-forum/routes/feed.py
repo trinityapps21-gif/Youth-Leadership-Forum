@@ -111,6 +111,30 @@ def like(post_id):
     return jsonify(liked=liked, count=count)
 
 
+@bp.route("/api/posts/<int:post_id>/likes")
+@login_required
+def likers(post_id):
+    """Who liked a post (newest first). People you've blocked, or who blocked you, are left out."""
+    if not db.one("SELECT id FROM posts WHERE id = ? AND is_removed = 0", (post_id,)):
+        abort(404)
+    uid = g.user["id"]
+    rows = db.query(
+        """SELECT u.id, u.name, u.avatar, u.role, u.organization
+           FROM likes l JOIN users u ON u.id = l.user_id
+           WHERE l.post_id = ? AND u.status = 'active'
+             AND u.id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = ?)
+             AND u.id NOT IN (SELECT blocker_id FROM blocks WHERE blocked_id = ?)
+           ORDER BY l.created_at DESC, u.id DESC LIMIT 300""",
+        (post_id, uid, uid),
+    )
+    return jsonify(likes=[
+        dict(id=r["id"], name=r["name"], role=r["role"], organization=r["organization"] or "",
+             avatar=storage.media_url(r["avatar"]), initials=helpers.initials(r["name"]),
+             url=url_for("people.profile", user_id=r["id"]))
+        for r in rows
+    ])
+
+
 @bp.route("/api/posts/<int:post_id>/comments", methods=["GET", "POST"])
 @login_required
 def comments(post_id):
