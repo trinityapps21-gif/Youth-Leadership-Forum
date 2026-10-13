@@ -57,6 +57,13 @@
   </nav>
 </div>
 
+<dialog id="likes-dialog" aria-labelledby="likes-title">
+  <h2 id="likes-title">Liked by</h2>
+  <ul class="likers-list" id="likes-list"></ul>
+  <p class="muted small likers-empty hidden">No likes yet.</p>
+  <div class="row" style="justify-content:flex-end;margin-top:.8rem"><button type="button" class="btn btn-ghost" id="likes-close">Close</button></div>
+</dialog>
+
 <dialog id="report-dialog" aria-labelledby="r-title">
   <form method="dialog">
     <h2 id="r-title" class="r-title">Report</h2>
