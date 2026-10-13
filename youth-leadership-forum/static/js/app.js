@@ -52,8 +52,45 @@
       btn.classList.toggle("liked", d.liked);
       btn.setAttribute("aria-pressed", d.liked ? "true" : "false");
       btn.querySelector(".n").textContent = d.count;
+      syncLikers(btn.closest(".post"), d.count);
     }).catch(function (err) { alert(err.message); });
   });
+
+  // ---- who liked ----
+  function syncLikers(post, count) {
+    var b = post && post.querySelector(".js-likers");
+    if (!b) return;
+    b.classList.toggle("hidden", !count);
+    b.querySelector(".likers-n").textContent = count;
+    b.querySelector(".likers-w").textContent = count === 1 ? "like" : "likes";
+  }
+  var likesDlg = document.getElementById("likes-dialog");
+  if (likesDlg) {
+    var likesList = document.getElementById("likes-list"), likesEmpty = likesDlg.querySelector(".likers-empty");
+    document.getElementById("likes-close").addEventListener("click", function () { likesDlg.close(); });
+    likesDlg.addEventListener("click", function (e) { if (e.target === likesDlg) likesDlg.close(); });
+    document.addEventListener("click", function (e) {
+      var b = e.target.closest(".js-likers");
+      if (!b) return;
+      likesList.textContent = ""; likesEmpty.classList.add("hidden");
+      var loading = el("li", "muted small", "Loading…"); likesList.appendChild(loading);
+      if (likesDlg.showModal) likesDlg.showModal(); else likesDlg.setAttribute("open", "");
+      api("/api/posts/" + b.dataset.id + "/likes").then(function (d) {
+        likesList.textContent = "";
+        likesEmpty.classList.toggle("hidden", d.likes.length > 0);
+        d.likes.forEach(function (u) {
+          var li = el("li"), a = el("a", "liker"); a.href = u.url;
+          var av;
+          if (u.avatar) { av = el("img", "av av-md"); av.src = u.avatar; av.alt = ""; } else { av = el("span", "av av-md av-ph", u.initials); }
+          var col = el("span", "grow"), nm = el("span", "nm", u.name);
+          col.appendChild(nm);
+          var sub = [u.role !== "member" ? u.role.charAt(0).toUpperCase() + u.role.slice(1) : "", u.organization].filter(Boolean).join(" · ");
+          if (sub) col.appendChild(el("span", "small muted sub", sub));
+          a.appendChild(av); a.appendChild(col); li.appendChild(a); likesList.appendChild(li);
+        });
+      }).catch(function (err) { likesList.textContent = ""; likesList.appendChild(el("li", "small", err.message)); });
+    });
+  }
 
   // ---- comments ----
   function renderComments(box, list) {
