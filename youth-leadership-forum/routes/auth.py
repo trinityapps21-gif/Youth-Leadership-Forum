@@ -44,7 +44,7 @@ def login():
         session["user_id"] = user["id"]
         session["pw"] = helpers.pw_fingerprint(user)
         session.permanent = True
-        if first_time:
+        if first_time and user["role"] != "admin":
             flash(f"Welcome to {current_app.config['SITE_NAME']}, {user['name'].split()[0]}! "
                   "Your account was approved. Say hello in the feed or start a chat.", "ok")
         return redirect(_safe_next(request.args.get("next")) or url_for("feed.index"))
