@@ -46,7 +46,20 @@ def parse_ts(value):
         return None
 
 
+_TZ_NAME = re.compile(r"^[A-Za-z_]+(/[A-Za-z0-9_+\-]+){0,2}$")
+
+
 def _tz():
+    """The viewer's own timezone (sent by their browser), else the forum's default."""
+    try:
+        name = request.cookies.get("tz", "") if request else ""
+    except RuntimeError:  # no request, e.g. a script
+        name = ""
+    if name and len(name) < 40 and _TZ_NAME.match(name):
+        try:
+            return ZoneInfo(name)
+        except Exception:
+            pass
     try:
         return ZoneInfo(current_app.config.get("TIMEZONE", "UTC"))
     except Exception:
