@@ -5,6 +5,7 @@ file so the app can be run and tested without any keys.
 Every query goes through query()/one()/execute()/insert() so the rest of the
 app never touches a driver directly.
 """
+import re
 import sqlite3
 
 from flask import current_app, g
@@ -188,16 +189,46 @@ def insert(sql, params=()):
     return row[0] if row else None
 
 
+def _declared_columns():
+    """Read each table's columns out of the SCHEMA text: {table: [(name, type, default_literal)]}."""
+    tables = {}
+    for stmt in SCHEMA:
+        m = re.match(r"\s*CREATE TABLE IF NOT EXISTS (\w+)\s*\((.*)\)\s*$", stmt, re.S)
+        if not m:
+            continue
+        body, parts, depth, cur = m.group(2), [], 0, ""
+        for ch in body:  # split on commas that are not inside parentheses
+            depth += ch == "("
+            depth -= ch == ")"
+            if ch == "," and depth == 0:
+                parts.append(cur)
+                cur = ""
+            else:
+                cur += ch
+        parts.append(cur)
+        cols = []
+        for part in parts:
+            tokens = part.split()
+            if not tokens or tokens[0].upper() in ("PRIMARY", "UNIQUE", "FOREIGN", "CHECK", "CONSTRAINT"):
+                continue
+            default = re.search(r"DEFAULT\s+('[^']*'|-?\d+(?:\.\d+)?)", part, re.I)
+            cols.append((tokens[0], tokens[1] if len(tokens) > 1 else "TEXT", default.group(1) if default else None))
+        tables[m.group(1)] = cols
+    return tables
+
+
 def _migrate(conn):
-    """Add columns that older databases don't have yet (safe to run on every start)."""
-    cols = {row[1] for row in conn.execute("PRAGMA table_info(posts)").fetchall()}
-    added = False
-    for col in ("media_type", "media_name"):
-        if col not in cols:
-            conn.execute(f"ALTER TABLE posts ADD COLUMN {col} TEXT DEFAULT ''")
-            added = True
-    if added:  # posts made before video/music/documents were photos
-        conn.execute("UPDATE posts SET media_type = 'image' WHERE image != '' AND (media_type IS NULL OR media_type = '')")
+    """Add any column an older database is missing, so upgrading never needs manual SQL.
+    Safe to run on every start: it only touches columns that don't exist yet."""
+    for table, cols in _declared_columns().items():
+        have = {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+        for name, ctype, default in cols:
+            if name in have:
+                continue
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {ctype}" + (f" DEFAULT {default}" if default else ""))
+            current_app.logger.warning("Upgraded database: added %s.%s", table, name)
+            if (table, name) == ("posts", "media_type"):  # posts made before video/music/documents were photos
+                conn.execute("UPDATE posts SET media_type = 'image' WHERE image != '' AND (media_type IS NULL OR media_type = '')")
     conn.commit()
 
 
