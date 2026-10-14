@@ -17,6 +17,18 @@
   }
   window.YLF = { api: api, csrf: csrf };
 
+  // Tell the server the viewer's timezone so message and post times are correct in any country.
+  try {
+    var zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (zone && document.cookie.indexOf("tz=" + encodeURIComponent(zone)) === -1 && document.cookie.indexOf("tz=" + zone) === -1) {
+      var fresh = document.cookie.indexOf("tz=") === -1;
+      document.cookie = "tz=" + encodeURIComponent(zone) + "; path=/; max-age=31536000; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : "");
+      if (fresh && document.body && document.body.dataset.signedIn === "1" && !sessionStorage.getItem("tz-reloaded")) {
+        sessionStorage.setItem("tz-reloaded", "1"); location.reload();  // once, so this first page shows their local times
+      }
+    }
+  } catch (e) {}
+
   function el(tag, cls, text) {
     var n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -106,6 +118,18 @@
       bub.appendChild(el("b", null, c.name));
       bub.appendChild(document.createTextNode(c.content));
       var meta = el("div", "meta", c.when);
+      var lk = el("button", "comment-like" + (c.liked ? " liked" : ""));
+      lk.type = "button"; lk.setAttribute("aria-pressed", c.liked ? "true" : "false");
+      lk.setAttribute("aria-label", "Like this comment");
+      var heart = el("span", "h", c.liked ? "\u2665" : "\u2661"), lbl = el("span", null, "Like"), cnt = el("span", "cnt", c.like_count ? String(c.like_count) : "");
+      lk.appendChild(heart); lk.appendChild(lbl); lk.appendChild(cnt);
+      lk.addEventListener("click", function () {
+        api("/api/comments/" + c.id + "/like", "POST").then(function (d) {
+          lk.classList.toggle("liked", d.liked); lk.setAttribute("aria-pressed", d.liked ? "true" : "false");
+          heart.textContent = d.liked ? "\u2665" : "\u2661"; cnt.textContent = d.count ? String(d.count) : "";
+        }).catch(function (err) { alert(err.message); });
+      });
+      meta.appendChild(document.createTextNode(" \u00b7 ")); meta.appendChild(lk);
       if (c.mine) {
         var del = el("button", "icon-btn", "Delete");
         del.type = "button";
