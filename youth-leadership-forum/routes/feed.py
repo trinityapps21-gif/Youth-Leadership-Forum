@@ -88,6 +88,7 @@ def delete_post(post_id):
     if not post or post["user_id"] != g.user["id"]:
         abort(403)
     helpers.delete_upload(post["image"])
+    db.execute("DELETE FROM comment_likes WHERE comment_id IN (SELECT id FROM comments WHERE post_id = ?)", (post_id,))
     db.execute("DELETE FROM comments WHERE post_id = ?", (post_id,))
     db.execute("DELETE FROM likes WHERE post_id = ?", (post_id,))
     db.execute("DELETE FROM posts WHERE id = ?", (post_id,))
@@ -149,20 +150,41 @@ def comments(post_id):
             return jsonify(error="Comments can be up to 500 characters."), 400
         db.execute("INSERT INTO comments (post_id, user_id, content) VALUES (?,?,?)", (post_id, uid, text))
     rows = db.query(
-        """SELECT c.id, c.content, c.created_at, c.user_id, u.name, u.avatar
+        """SELECT c.id, c.content, c.created_at, c.user_id, u.name, u.avatar,
+                  (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id) AS like_count,
+                  (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id AND cl.user_id = ?) AS liked
            FROM comments c JOIN users u ON u.id = c.user_id
            WHERE c.post_id = ? AND u.status = 'active'
              AND c.user_id NOT IN (SELECT blocked_id FROM blocks WHERE blocker_id = ?)
            ORDER BY c.id ASC LIMIT 200""",
-        (post_id, uid),
+        (uid, post_id, uid),
     )
     return jsonify(comments=[
         dict(id=r["id"], content=r["content"], name=r["name"], user_id=r["user_id"],
              avatar=storage.media_url(r["avatar"]),
              initials=helpers.initials(r["name"]), when=helpers.timeago(r["created_at"]),
-             mine=r["user_id"] == uid)
+             mine=r["user_id"] == uid, like_count=r["like_count"], liked=bool(r["liked"]))
         for r in rows
     ])
+
+
+@bp.route("/api/comments/<int:comment_id>/like", methods=["POST"])
+@login_required
+def like_comment(comment_id):
+    c = db.one(
+        """SELECT c.id FROM comments c JOIN posts p ON p.id = c.post_id
+           WHERE c.id = ? AND p.is_removed = 0""", (comment_id,))
+    if not c:
+        abort(404)
+    uid = g.user["id"]
+    if db.one("SELECT 1 AS x FROM comment_likes WHERE comment_id = ? AND user_id = ?", (comment_id, uid)):
+        db.execute("DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?", (comment_id, uid))
+        liked = False
+    else:
+        db.execute("INSERT INTO comment_likes (comment_id, user_id) VALUES (?,?)", (comment_id, uid))
+        liked = True
+    count = db.one("SELECT COUNT(*) AS n FROM comment_likes WHERE comment_id = ?", (comment_id,))["n"]
+    return jsonify(liked=liked, count=count)
 
 
 @bp.route("/api/comments/<int:comment_id>/delete", methods=["POST"])
@@ -171,6 +193,7 @@ def delete_comment(comment_id):
     c = db.one("SELECT * FROM comments WHERE id = ?", (comment_id,))
     if not c or c["user_id"] != g.user["id"]:
         abort(403)
+    db.execute("DELETE FROM comment_likes WHERE comment_id = ?", (comment_id,))
     db.execute("DELETE FROM comments WHERE id = ?", (comment_id,))
     return jsonify(ok=True)
 
