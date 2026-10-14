@@ -142,6 +142,11 @@ def create_app():
             500: ("Something broke on our side", "Try again in a moment. If it keeps happening, tell the forum admin."),
         }
         title, text = messages.get(code, messages[500])
+        cause = getattr(err, "original_exception", None)
+        if code == 500 and cause is not None:
+            app.logger.error("Page error on %s: %s: %s", request.path, type(cause).__name__, cause)
+            if g.get("user") and g.user["role"] == "admin":  # only admins ever see the technical reason
+                text += f" (Admin detail: {type(cause).__name__}: {str(cause)[:200]})"
         if request.path.startswith("/api/"):
             return {"error": text}, code
         return render_template("error.html", code=code, title=title, text=text), code
