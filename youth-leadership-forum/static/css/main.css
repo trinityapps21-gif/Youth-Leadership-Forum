@@ -363,3 +363,11 @@ dialog .opts input { accent-color: var(--green); width: 18px; height: 18px; }
 .liker:hover { background: #eef2fa; }
 .liker .nm { display: block; font-weight: 600; }
 .liker .sub { display: block; }
+
+/* ---- liking a comment ---- */
+.comment .meta { display: flex; align-items: center; flex-wrap: wrap; gap: .1rem; }
+.comment-like { background: none; border: 0; padding: 0 .3rem; cursor: pointer; font: inherit; font-size: .78rem; font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; gap: .25rem; border-radius: 6px; }
+.comment-like:hover { background: #eef2fa; color: var(--navy); }
+.comment-like.liked { color: #d1285a; }
+.comment-like .h { font-size: .95rem; line-height: 1; }
+.comment-like .cnt:not(:empty) { min-width: 1ch; }
